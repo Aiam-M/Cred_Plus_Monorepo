@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  /* Greens — spec: Verde Primário #2D5016, Verde Secundário #4A7C2F */
+  --color-cred-green-dark: #2D5016;
+  --color-cred-green-medium: #4A7C2F;
+  --color-cred-green-light: #8B956D;
+
+  /* Ambers */
+  --color-cred-orange: #D97706;
+  --color-cred-orange-light: #F59E0B;
+
+  /* Backgrounds */
+  --color-cred-cream: #FDFBF7;
+  --color-cred-beige: #F5F1E8;
+
+  /* Grays — spec */
+  --color-cred-gray-neutral: #F5F5F5;
+  --color-cred-gray-text: #333333;
+  --color-cred-gray-border: #E0E0E0;
+
+  /* Semantic colors — spec */
+  --color-cred-red-error: #DC2626;
+  --color-cred-blue-info: #3B82F6;
+  --color-cred-yellow-alert: #F59E0B;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-cred-gray-neutral);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}

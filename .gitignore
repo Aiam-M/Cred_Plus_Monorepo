@@ -1,0 +1,43 @@
+# Git/Vercel locais
+.vercel/
+**/.vercel/
+
+# Java / Spring
+**/target/
+
+# Node / React
+**/node_modules/
+**/dist/
+**/build/
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+
+# Env
+.env
+*.env
+**/.env
+
+# Credenciais
+credplus-*.json
+credentials.json
+service-account.json
+*.pem
+*.key
+
+# IDE
+*.iml
+.idea/
+.vscode/
+
+# Claude Code (contém settings.local.json com permissões e possivelmente env vars)
+.claude/
+
+# Sistema
+.DS_Store
+
+credplus-495801-1384c8ef55b9.json
+CLAUDE.md
