@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SlidersHorizontal } from 'lucide-react';
 import SafraCard from '../components/safras/SafraCard';
 import InteresseModal from '../components/safras/InteresseModal';
-import { mockSafras } from '../data/mockData';
+import { api } from '../services/api';
 
 const TIPOS = ['CACAU', 'ACAI', 'PIMENTA', 'MANDIOCA'];
 const TIPO_LABEL = { CACAU: 'Cacau', ACAI: 'Açaí', PIMENTA: 'Pimenta-do-Reino', MANDIOCA: 'Mandioca' };
@@ -21,23 +21,39 @@ function toggle(arr, val) {
   return arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
 }
 
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 border-4 border-cred-green-dark border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 export default function SafrasList() {
   const navigate = useNavigate();
   const [filtros, setFiltros] = useState({ tipos: [], scoreMin: 0, status: [] });
+  const [safras, setSafras] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [modalSafra, setModalSafra] = useState(null);
   const [sucessoId, setSucessoId] = useState(null);
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
 
-  const safrasFiltradas = useMemo(() => {
-    return mockSafras.filter((s) => {
-      if (filtros.tipos.length > 0) {
-        const tiposDaSafra = s.plantacoes.map((p) => p.tipo);
-        if (!filtros.tipos.some((t) => tiposDaSafra.includes(t))) return false;
-      }
-      if (s.agroScore < filtros.scoreMin) return false;
-      if (filtros.status.length > 0 && !filtros.status.includes(s.status)) return false;
-      return true;
-    });
+  // Busca safras do backend sempre que os filtros mudarem
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    const params = new URLSearchParams();
+    filtros.tipos.forEach((t) => params.append('tipos', t));
+    if (filtros.scoreMin > 0) params.set('scoreMin', String(filtros.scoreMin));
+    filtros.status.forEach((s) => params.append('status', s));
+
+    const query = params.toString();
+    api.get(`/cred/safras${query ? `?${query}` : ''}`)
+      .then(setSafras)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [filtros]);
 
   const handleConfirmarInteresse = ({ safraId }) => {
@@ -171,35 +187,49 @@ export default function SafrasList() {
           </div>
         )}
 
-        {/* Grid de safras */}
+        {/* Conteúdo principal */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-500 mb-4">
-            {safrasFiltradas.length} safra{safrasFiltradas.length !== 1 ? 's' : ''} encontrada{safrasFiltradas.length !== 1 ? 's' : ''}
-          </p>
+          {loading && <Spinner />}
 
-          {safrasFiltradas.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {safrasFiltradas.map((safra) => (
-                <SafraCard
-                  key={safra.id}
-                  safra={safra}
-                  onVerDetalhes={(id) => navigate(`/safras/${id}`)}
-                  onDemonstrarInteresse={(s) => setModalSafra(s)}
-                />
-              ))}
+          {!loading && error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+              ⚠️ Erro ao carregar safras: {error}
             </div>
-          ) : (
-            <div className="text-center py-16 bg-white rounded-2xl border border-cred-gray-border">
-              <SlidersHorizontal className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">Nenhuma safra encontrada com esses filtros.</p>
-              <button
-                type="button"
-                onClick={limparFiltros}
-                className="mt-3 text-sm text-cred-green-medium hover:underline"
-              >
-                Limpar filtros
-              </button>
-            </div>
+          )}
+
+          {!loading && !error && (
+            <>
+              <p className="text-sm text-gray-500 mb-4">
+                {safras.length} safra{safras.length !== 1 ? 's' : ''} encontrada{safras.length !== 1 ? 's' : ''}
+              </p>
+
+              {safras.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {safras.map((safra) => (
+                    <SafraCard
+                      key={safra.id}
+                      safra={safra}
+                      onVerDetalhes={(id) => navigate(`/safras/${id}`)}
+                      onDemonstrarInteresse={(s) => setModalSafra(s)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-white rounded-2xl border border-cred-gray-border">
+                  <SlidersHorizontal className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 font-medium">Nenhuma safra encontrada com esses filtros.</p>
+                  {filtrosAtivos && (
+                    <button
+                      type="button"
+                      onClick={limparFiltros}
+                      className="mt-3 text-sm text-cred-green-medium hover:underline"
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

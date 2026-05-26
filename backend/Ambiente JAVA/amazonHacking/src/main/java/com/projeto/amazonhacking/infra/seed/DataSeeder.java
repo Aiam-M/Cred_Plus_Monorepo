@@ -156,6 +156,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private void criarEmpresaTeste() {
         Empresa empresa = new Empresa(
+                "Amazon People",
                 "12345678000190",
                 EMAIL_EMPRESA_TESTE,
                 passwordEncoder.encode(SENHA_EMPRESA_TESTE),

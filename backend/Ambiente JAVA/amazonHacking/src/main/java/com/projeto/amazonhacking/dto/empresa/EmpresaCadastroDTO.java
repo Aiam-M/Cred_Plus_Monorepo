@@ -9,6 +9,10 @@ import jakarta.validation.constraints.Size;
  * Dados para cadastrar uma nova empresa compradora.
  */
 public record EmpresaCadastroDTO(
+        @NotBlank(message = "O nome da empresa é obrigatório")
+        @Size(max = 150, message = "O nome deve ter no máximo 150 caracteres")
+        String nome,
+
         @NotBlank(message = "O CNPJ é obrigatório")
         @Pattern(regexp = "\\d{14}", message = "O CNPJ deve conter 14 dígitos numéricos")
         String cnpj,

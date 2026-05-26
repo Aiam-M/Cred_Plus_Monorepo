@@ -7,6 +7,7 @@ import java.util.UUID;
  */
 public record GetEmpresaDTO(
         UUID id,
+        String nome,
         String cnpj,
         String email,
         String segmento

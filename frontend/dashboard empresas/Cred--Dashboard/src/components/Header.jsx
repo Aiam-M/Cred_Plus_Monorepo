@@ -15,7 +15,7 @@ function isActive(linkPath, currentPath) {
 }
 
 export default function Header() {
-  const { logout } = useAuth();
+  const { logout, empresa } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [perfilAberto, setPerfilAberto] = useState(false);
@@ -96,8 +96,8 @@ export default function Header() {
                 <div className="w-7 h-7 bg-cred-green-medium rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-cred-gray-text">
-                  Empresa
+                <span className="hidden sm:block text-sm font-medium text-cred-gray-text max-w-[120px] truncate">
+                  {empresa?.nome ?? empresa?.email ?? 'Empresa'}
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${

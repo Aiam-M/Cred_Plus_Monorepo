@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockInteresses } from '../data/mockData';
+import { api } from '../services/api';
 
 const STATUS_STYLE = {
   'Aguardando Contato': 'bg-yellow-100 text-yellow-800',
@@ -7,8 +8,26 @@ const STATUS_STYLE = {
   'Concluído': 'bg-green-100 text-green-800',
 };
 
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 border-4 border-cred-green-dark border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 export default function MeusInteresses() {
   const navigate = useNavigate();
+  const [interesses, setInteresses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.get('/cred/interesses/meus')
+      .then(setInteresses)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -19,7 +38,15 @@ export default function MeusInteresses() {
         </p>
       </div>
 
-      {mockInteresses.length === 0 ? (
+      {loading && <Spinner />}
+
+      {!loading && error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          ⚠️ Erro ao carregar interesses: {error}
+        </div>
+      )}
+
+      {!loading && !error && interesses.length === 0 && (
         <div className="text-center py-16 bg-white rounded-2xl border border-cred-gray-border">
           <p className="text-4xl mb-3">📋</p>
           <p className="text-gray-500 font-medium">Você ainda não demonstrou interesse em nenhuma safra.</p>
@@ -31,7 +58,9 @@ export default function MeusInteresses() {
             Ver Catálogo de Safras
           </button>
         </div>
-      ) : (
+      )}
+
+      {!loading && !error && interesses.length > 0 && (
         <>
           {/* Desktop: tabela */}
           <div className="hidden sm:block bg-white rounded-2xl border border-cred-gray-border overflow-hidden shadow-sm">
@@ -47,7 +76,7 @@ export default function MeusInteresses() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-cred-gray-border">
-                {mockInteresses.map((item) => (
+                {interesses.map((item) => (
                   <tr key={item.id} className="hover:bg-cred-gray-neutral/50 transition-colors">
                     <td className="px-5 py-4">
                       <p className="font-medium text-cred-gray-text">#{item.safraId}</p>
@@ -80,7 +109,7 @@ export default function MeusInteresses() {
 
           {/* Mobile: cards */}
           <div className="sm:hidden space-y-3">
-            {mockInteresses.map((item) => (
+            {interesses.map((item) => (
               <div key={item.id} className="bg-white rounded-xl border border-cred-gray-border p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>

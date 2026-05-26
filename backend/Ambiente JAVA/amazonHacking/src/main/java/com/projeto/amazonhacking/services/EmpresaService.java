@@ -40,9 +40,9 @@ public class EmpresaService {
 
         // A senha nunca é gravada em texto puro: sempre codificada com BCrypt.
         String senhaCodificada = passwordEncoder.encode(dto.password());
-        Empresa empresa = new Empresa(dto.cnpj(), dto.email(), senhaCodificada, dto.segmento());
+        Empresa empresa = new Empresa(dto.nome(), dto.cnpj(), dto.email(), senhaCodificada, dto.segmento());
         empresaRepository.save(empresa);
 
-        return new GetEmpresaDTO(empresa.getId(), empresa.getCnpj(), empresa.getEmail(), empresa.getSegmento());
+        return new GetEmpresaDTO(empresa.getId(), empresa.getNome(), empresa.getCnpj(), empresa.getEmail(), empresa.getSegmento());
     }
 }

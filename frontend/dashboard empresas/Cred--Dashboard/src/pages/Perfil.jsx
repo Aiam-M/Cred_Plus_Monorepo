@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { User, Mail, Building2, Hash, Shield, Bell, Check, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const SEGMENTOS = [
   'Indústria Alimentícia',
@@ -44,10 +45,12 @@ function Section({ title, icon: Icon, children }) {
 }
 
 export default function Perfil() {
+  const { empresa } = useAuth();
+
   const [form, setForm] = useState({
-    nome: MOCK_EMPRESA.nome,
-    segmento: MOCK_EMPRESA.segmento,
-    email: MOCK_EMPRESA.email,
+    nome: empresa?.nome ?? MOCK_EMPRESA.nome,
+    segmento: empresa?.segmento ?? MOCK_EMPRESA.segmento,
+    email: empresa?.email ?? MOCK_EMPRESA.email,
   });
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
@@ -153,7 +156,7 @@ export default function Perfil() {
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
               <input
                 type="text"
-                value={MOCK_EMPRESA.cnpj}
+                value={empresa?.cnpj ?? MOCK_EMPRESA.cnpj}
                 readOnly
                 className="w-full pl-9 pr-4 py-2.5 border border-cred-gray-border rounded-lg text-sm bg-cred-gray-neutral text-gray-400 cursor-not-allowed"
               />

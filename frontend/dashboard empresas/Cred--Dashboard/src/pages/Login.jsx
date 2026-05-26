@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 
@@ -10,22 +10,22 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    // Mensagem de sucesso vinda do cadastro (quando o login automático não acontece).
+    const mensagemSucesso = location.state?.mensagem;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
-        // Simula delay de rede para parecer real
-        setTimeout(() => {
-            const result = login(email, password);
-            if (result.success) {
-                navigate('/', { replace: true });
-            } else {
-                setError(result.error);
-            }
+        const result = await login(email, password);
+        if (result.success) {
+            navigate('/', { replace: true });
+        } else {
+            setError(result.error);
             setLoading(false);
-        }, 800);
+        }
     };
 
     return (
@@ -38,6 +38,13 @@ export default function Login() {
                     <h1 className="text-2xl font-bold text-cred-green-dark">cred+</h1>
                     <p className="text-sm text-gray-500 mt-1">Acesso Empresarial</p>
                 </div>
+
+                {mensagemSucesso && !error && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700 text-sm">
+                        <span>✅</span>
+                        <span>{mensagemSucesso}</span>
+                    </div>
+                )}
 
                 {error && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
@@ -99,15 +106,12 @@ export default function Login() {
                     </a>
                     <p className="text-gray-400">
                         Sem conta?{' '}
-                        <a href="#" className="text-cred-green-dark font-medium hover:underline">
+                        <Link to="/cadastro" className="text-cred-green-dark font-medium hover:underline">
                             Cadastrar minha empresa
-                        </a>
+                        </Link>
                     </p>
                 </div>
 
-                <div className="mt-4 text-center text-xs text-gray-400">
-                    Protótipo: use qualquer e-mail e senha (mín. 4 caracteres)
-                </div>
             </div>
         </div>
     );

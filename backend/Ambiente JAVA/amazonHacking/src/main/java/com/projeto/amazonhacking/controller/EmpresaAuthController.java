@@ -51,7 +51,7 @@ public class EmpresaAuthController {
         String token = tokenService.generateToken(empresa);
 
         return ResponseEntity.ok(new EmpresaLoginResponseDTO(
-                token, empresa.getEmail(), empresa.getCnpj(), empresa.getSegmento()));
+                token, empresa.getNome(), empresa.getEmail(), empresa.getCnpj(), empresa.getSegmento()));
     }
 
     /**

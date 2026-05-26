@@ -5,6 +5,7 @@ package com.projeto.amazonhacking.dto.empresa;
  */
 public record EmpresaLoginResponseDTO(
         String token,
+        String nome,
         String email,
         String cnpj,
         String segmento

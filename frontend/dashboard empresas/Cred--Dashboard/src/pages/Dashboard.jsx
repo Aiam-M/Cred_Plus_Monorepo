@@ -1,23 +1,58 @@
+import { useState, useEffect } from 'react';
 import { Leaf, MapPin, Star } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import MetricCard from '../components/MetricCard';
-import { mockDashboard } from '../data/mockData';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-const SCORE_BAR_DATA = [
-  { label: 'Excelente (90-100)', value: mockDashboard.distribuicaoScore.excelente, fill: '#2D5016' },
-  { label: 'Bom (70-89)', value: mockDashboard.distribuicaoScore.bom, fill: '#4A7C2F' },
-  { label: 'Regular (<70)', value: mockDashboard.distribuicaoScore.regular, fill: '#F59E0B' },
-];
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div className="w-8 h-8 border-4 border-cred-green-dark border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function Dashboard() {
+  const { empresa } = useAuth();
+  const [dados, setDados] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.get('/cred/dashboard')
+      .then(setDados)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <Spinner />;
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        ⚠️ Erro ao carregar dashboard: {error}
+      </div>
+    );
+  }
+
+  const SCORE_BAR_DATA = [
+    { label: 'Excelente (90-100)', value: dados.distribuicaoScore.excelente, fill: '#2D5016' },
+    { label: 'Bom (70-89)', value: dados.distribuicaoScore.bom, fill: '#4A7C2F' },
+    { label: 'Regular (<70)', value: dados.distribuicaoScore.regular, fill: '#F59E0B' },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Boas-vindas */}
       <div>
         <h1 className="text-2xl font-bold text-cred-gray-text">
-          Bem-vinda, <span className="text-cred-green-dark">Empresa Exemplo Ltda</span>
+          Bem-vinda,{' '}
+          <span className="text-cred-green-dark">
+            {empresa?.nome ?? empresa?.email ?? 'sua empresa'}
+          </span>
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           Veja as safras disponíveis de produtores amazônicos verificados.
@@ -29,21 +64,21 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <MetricCard
             title="Safras Ativas"
-            value={mockDashboard.safrasAtivas}
+            value={dados.safrasAtivas}
             subtitle="Em todo o sistema"
             icon={Leaf}
             colorScheme="green"
           />
           <MetricCard
             title="Score Médio"
-            value={`${mockDashboard.agroScoreMedio}/100`}
+            value={`${dados.agroScoreMedio}/100`}
             subtitle="AgroScore médio das safras"
             icon={Star}
             colorScheme="green"
           />
           <MetricCard
             title="Hectares Totais"
-            value={`${mockDashboard.areaTotalHectares.toLocaleString('pt-BR')} ha`}
+            value={`${dados.areaTotalHectares.toLocaleString('pt-BR')} ha`}
             subtitle="Área monitorada"
             icon={MapPin}
             colorScheme="orange"
@@ -98,7 +133,9 @@ export default function Dashboard() {
             <p className="text-sm text-gray-400 font-medium">Mapa interativo em desenvolvimento</p>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-cred-gray-border">
               <span className="w-2 h-2 rounded-full bg-cred-green-medium" />
-              <span className="text-xs text-gray-500">Moju-PA · 127 safras</span>
+              <span className="text-xs text-gray-500">
+                Moju-PA · {dados.safrasAtivas} safra{dados.safrasAtivas !== 1 ? 's' : ''}
+              </span>
             </div>
           </div>
         </div>

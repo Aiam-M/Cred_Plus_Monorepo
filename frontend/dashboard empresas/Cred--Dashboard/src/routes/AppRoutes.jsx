@@ -4,6 +4,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import MainLayout from '../layouts/MainLayout';
 import Dashboard from '../pages/Dashboard';
 import Login from '../pages/Login';
+import Cadastro from '../pages/Cadastro';
 import SafrasList from '../pages/SafrasList';
 import SafraDetails from '../pages/SafraDetails';
 import MeusInteresses from '../pages/MeusInteresses';
@@ -14,8 +15,9 @@ export default function AppRoutes() {
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    {/* Rota pública */}
+                    {/* Rotas públicas */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/cadastro" element={<Cadastro />} />
 
                     {/* Rotas protegidas */}
                     <Route

@@ -20,6 +20,10 @@ public class TokenService {
     @Value("${api.security.token.secret}")
     private String secret;
 
+    // Emissor (issuer) do token. Precisa ser EXATAMENTE o mesmo na geração e na
+    // validação; se divergir, a verificação falha e o usuário nunca é autenticado.
+    private static final String ISSUER = "cred-plus-api";
+
     public String generateToken(Usuario usuario){
         return gerarToken(usuario.getEmail());
     }
@@ -34,7 +38,7 @@ public class TokenService {
         try{
             Algorithm algorithm = Algorithm.HMAC256(secret);
             String token = JWT.create()
-                .withIssuer("cred-plus-api")
+                .withIssuer(ISSUER)
                 .withSubject(subject)
                 .withExpiresAt(genExpirationDate())
                 .sign(algorithm);
@@ -48,7 +52,7 @@ public class TokenService {
         try{
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
-                .withIssuer("auth-api")
+                .withIssuer(ISSUER)
                 .build()
                 .verify(token)
                 .getSubject();

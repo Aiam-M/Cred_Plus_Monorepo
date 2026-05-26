@@ -31,6 +31,8 @@ public class Empresa implements UserDetails {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
+    private String nome;
+
     private String cnpj;
     private String email;
 
@@ -45,7 +47,8 @@ public class Empresa implements UserDetails {
     public Empresa() {
     }
 
-    public Empresa(String cnpj, String email, String passwordHash, String segmento) {
+    public Empresa(String nome, String cnpj, String email, String passwordHash, String segmento) {
+        this.nome = nome;
         this.cnpj = cnpj;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -63,6 +66,14 @@ public class Empresa implements UserDetails {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     public String getCnpj() {

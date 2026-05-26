@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, CheckCheck, Database } from 'lucide-react';
+import {
+  ArrowLeft, Copy, CheckCheck, Database,
+  FileText, Satellite, CheckCircle, Briefcase, XCircle, AlertTriangle,
+} from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -8,7 +11,23 @@ import {
 import StatusBadge from '../components/common/StatusBadge';
 import AgroScoreDisplay from '../components/common/AgroScoreDisplay';
 import InteresseModal from '../components/safras/InteresseModal';
-import { mockSafras, mockAgroScoreDetalhes, mockRastreabilidade } from '../data/mockData';
+import { api } from '../services/api';
+
+// Converte o string retornado pelo backend (ex.: "check-circle") no componente Lucide.
+const ICONE_MAP = {
+  'file-text': FileText,
+  'satellite': Satellite,
+  'check-circle': CheckCircle,
+  'briefcase': Briefcase,
+  'x-circle': XCircle,
+  'alert-triangle': AlertTriangle,
+};
+
+function IconeLucide({ nome, className = 'w-4 h-4' }) {
+  const Icone = ICONE_MAP[nome];
+  if (!Icone) return <span className="text-sm">•</span>;
+  return <Icone className={className} />;
+}
 
 const TIPO_LABEL = { CACAU: 'Cacau', ACAI: 'Açaí', PIMENTA: 'Pimenta-do-Reino', MANDIOCA: 'Mandioca' };
 
@@ -25,6 +44,14 @@ const COR_EVENTO_DOT = {
   yellow: 'border-cred-yellow-alert',
   red: 'border-cred-red-error',
 };
+
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 border-4 border-cred-green-dark border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function formatDate(iso) {
   return new Date(iso).toLocaleString('pt-BR', {
@@ -128,8 +155,16 @@ function AbaVisaoGeral({ safra, onDemonstrarInteresse }) {
 }
 
 // ── Aba 2: AgroScore ────────────────────────────────────────────────────────
-function AbaAgroScore({ safraId }) {
-  const detalhes = mockAgroScoreDetalhes[safraId];
+function AbaAgroScore({ detalhes, loading, error }) {
+  if (loading) return <Spinner />;
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        ⚠️ Erro ao carregar AgroScore: {error}
+      </div>
+    );
+  }
 
   if (!detalhes) {
     return (
@@ -171,7 +206,9 @@ function AbaAgroScore({ safraId }) {
             <div key={c.id} className="bg-white rounded-xl border border-cred-gray-border p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                  <span className="text-base shrink-0 mt-0.5">{c.icone}</span>
+                  <span className="shrink-0 mt-0.5 text-cred-green-dark">
+                    <IconeLucide nome={c.icone} className="w-4 h-4" />
+                  </span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-cred-gray-text">{c.nome}</p>
                     <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{c.justificativa}</p>
@@ -197,7 +234,7 @@ function AbaAgroScore({ safraId }) {
 
       {/* Gráfico NDVI */}
       <div className="bg-white rounded-2xl border border-cred-gray-border p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">📈 Série Temporal NDVI (2019-2025)</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">📈 Série Temporal NDVI</h3>
         <p className="text-xs text-gray-400 mb-4">Linha tracejada vermelha = limiar mínimo (0,70)</p>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={detalhes.ndviSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -288,9 +325,18 @@ function AbaAgroScore({ safraId }) {
 }
 
 // ── Aba 3: Rastreabilidade ──────────────────────────────────────────────────
-function AbaRastreabilidade({ safraId }) {
-  const rastr = mockRastreabilidade[safraId];
+function AbaRastreabilidade({ rastr, loading, error }) {
   const [verificado, setVerificado] = useState(false);
+
+  if (loading) return <Spinner />;
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        ⚠️ Erro ao carregar rastreabilidade: {error}
+      </div>
+    );
+  }
 
   if (!rastr) {
     return (
@@ -326,8 +372,8 @@ function AbaRastreabilidade({ safraId }) {
           <div key={ev.id} className="flex gap-4">
             {/* Linha vertical + dot */}
             <div className="flex flex-col items-center shrink-0">
-              <div className={`w-9 h-9 rounded-full bg-white border-2 flex items-center justify-center text-base z-10 ${COR_EVENTO_DOT[ev.cor] ?? 'border-gray-300'}`}>
-                {ev.icone}
+              <div className={`w-9 h-9 rounded-full bg-white border-2 flex items-center justify-center z-10 ${COR_EVENTO_DOT[ev.cor] ?? 'border-gray-300'}`}>
+                <IconeLucide nome={ev.icone} className="w-4 h-4" />
               </div>
               {i < eventos.length - 1 && (
                 <div className="w-0.5 flex-1 bg-cred-gray-border my-1 min-h-[1.5rem]" />
@@ -408,7 +454,76 @@ export default function SafraDetails() {
   const [modalAberto, setModalAberto] = useState(false);
   const [interesseConfirmado, setInteresseConfirmado] = useState(false);
 
-  const safra = mockSafras.find((s) => s.id === Number(id));
+  // Estado da aba 1: Visão Geral
+  const [safra, setSafra] = useState(null);
+  const [safraLoading, setSafraLoading] = useState(true);
+  const [safraError, setSafraError] = useState(null);
+
+  // Estado da aba 2: AgroScore (carregado só quando a aba for aberta pela primeira vez)
+  const [agroScore, setAgroScore] = useState(null);
+  const [agroScoreLoading, setAgroScoreLoading] = useState(false);
+  const [agroScoreError, setAgroScoreError] = useState(null);
+  const [agroScoreFetched, setAgroScoreFetched] = useState(false);
+
+  // Estado da aba 3: Rastreabilidade (idem)
+  const [rastreabilidade, setRastreabilidade] = useState(null);
+  const [rastreabilidadeLoading, setRastreabilidadeLoading] = useState(false);
+  const [rastreabilidadeError, setRastreabilidadeError] = useState(null);
+  const [rastreabilidadeFetched, setRastreabilidadeFetched] = useState(false);
+
+  // Busca visão geral da safra ao montar o componente
+  useEffect(() => {
+    api.get(`/cred/safras/${id}`)
+      .then(setSafra)
+      .catch((err) => setSafraError(err.message))
+      .finally(() => setSafraLoading(false));
+  }, [id]);
+
+  // Busca AgroScore na primeira vez que a aba é aberta
+  useEffect(() => {
+    if (abaAtiva !== 'agroscore' || agroScoreFetched) return;
+    setAgroScoreLoading(true);
+    api.get(`/cred/safras/${id}/agroscore`)
+      .then((data) => { setAgroScore(data); setAgroScoreFetched(true); })
+      .catch((err) => { setAgroScoreError(err.message); setAgroScoreFetched(true); })
+      .finally(() => setAgroScoreLoading(false));
+  }, [abaAtiva, agroScoreFetched, id]);
+
+  // Busca Rastreabilidade na primeira vez que a aba é aberta
+  useEffect(() => {
+    if (abaAtiva !== 'rastreabilidade' || rastreabilidadeFetched) return;
+    setRastreabilidadeLoading(true);
+    api.get(`/cred/safras/${id}/rastreabilidade`)
+      .then((data) => { setRastreabilidade(data); setRastreabilidadeFetched(true); })
+      .catch((err) => { setRastreabilidadeError(err.message); setRastreabilidadeFetched(true); })
+      .finally(() => setRastreabilidadeLoading(false));
+  }, [abaAtiva, rastreabilidadeFetched, id]);
+
+  const handleConfirmarInteresse = () => {
+    setInteresseConfirmado(true);
+    setTimeout(() => setInteresseConfirmado(false), 4000);
+  };
+
+  if (safraLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 border-4 border-cred-green-dark border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (safraError) {
+    return (
+      <div className="space-y-4">
+        <button type="button" onClick={() => navigate('/safras')} className="flex items-center gap-2 text-sm text-cred-green-dark hover:underline">
+          <ArrowLeft className="w-4 h-4" /> Voltar ao Catálogo
+        </button>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          ⚠️ Erro ao carregar safra: {safraError}
+        </div>
+      </div>
+    );
+  }
 
   if (!safra) {
     return (
@@ -421,11 +536,6 @@ export default function SafraDetails() {
       </div>
     );
   }
-
-  const handleConfirmarInteresse = () => {
-    setInteresseConfirmado(true);
-    setTimeout(() => setInteresseConfirmado(false), 4000);
-  };
 
   return (
     <div className="space-y-6">
@@ -486,9 +596,15 @@ export default function SafraDetails() {
           ))}
         </div>
         <div className="p-6">
-          {abaAtiva === 'visao-geral' && <AbaVisaoGeral safra={safra} onDemonstrarInteresse={() => setModalAberto(true)} />}
-          {abaAtiva === 'agroscore' && <AbaAgroScore safraId={safra.id} />}
-          {abaAtiva === 'rastreabilidade' && <AbaRastreabilidade safraId={safra.id} />}
+          {abaAtiva === 'visao-geral' && (
+            <AbaVisaoGeral safra={safra} onDemonstrarInteresse={() => setModalAberto(true)} />
+          )}
+          {abaAtiva === 'agroscore' && (
+            <AbaAgroScore detalhes={agroScore} loading={agroScoreLoading} error={agroScoreError} />
+          )}
+          {abaAtiva === 'rastreabilidade' && (
+            <AbaRastreabilidade rastr={rastreabilidade} loading={rastreabilidadeLoading} error={rastreabilidadeError} />
+          )}
         </div>
       </div>
 

@@ -1,12 +1,25 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function InteresseModal({ safra, onClose, onConfirm }) {
+  const { empresa } = useAuth();
   const [mensagem, setMensagem] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  const handleConfirm = () => {
-    onConfirm?.({ safraId: safra.id, mensagem });
-    onClose();
+  const handleConfirm = async () => {
+    setEnviando(true);
+    setErro(null);
+    try {
+      await api.post(`/cred/safras/${safra.id}/interesse`, { mensagem });
+      onConfirm?.({ safraId: safra.id });
+      onClose();
+    } catch (err) {
+      setErro(err.message || 'Erro ao registrar interesse. Tente novamente.');
+      setEnviando(false);
+    }
   };
 
   return (
@@ -34,12 +47,14 @@ export default function InteresseModal({ safra, onClose, onConfirm }) {
           <div>
             <p className="text-sm font-medium text-gray-500 mb-1">Safra</p>
             <p className="text-sm text-cred-gray-text font-medium">{safra.nome}</p>
-            <p className="text-xs text-gray-400">Produtor: {safra.produtor.nome} · {safra.associacao.municipio}-{safra.associacao.estado}</p>
+            <p className="text-xs text-gray-400">
+              Produtor: {safra.produtor.nome} · {safra.associacao.municipio}-{safra.associacao.estado}
+            </p>
           </div>
 
           <div>
             <p className="text-sm font-medium text-gray-500 mb-1">Sua empresa</p>
-            <p className="text-sm text-cred-gray-text">Empresa Exemplo Ltda</p>
+            <p className="text-sm text-cred-gray-text">{empresa?.nome ?? empresa?.email ?? '—'}</p>
           </div>
 
           <div>
@@ -51,9 +66,16 @@ export default function InteresseModal({ safra, onClose, onConfirm }) {
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}
               placeholder="Olá! Nossa empresa está interessada em estabelecer uma parceria de longo prazo..."
+              maxLength={1000}
               className="w-full px-3 py-2.5 text-sm border border-cred-gray-border rounded-lg focus:outline-none focus:ring-2 focus:ring-cred-green-medium/40 resize-none"
             />
           </div>
+
+          {erro && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">
+              ⚠️ {erro}
+            </div>
+          )}
 
           <div className="flex items-start gap-2 p-3 bg-cred-blue-info/10 rounded-lg">
             <span className="text-cred-blue-info text-base leading-none mt-0.5">ℹ️</span>
@@ -68,16 +90,22 @@ export default function InteresseModal({ safra, onClose, onConfirm }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-cred-gray-border text-cred-gray-text rounded-lg font-medium hover:bg-cred-gray-neutral transition-colors text-sm"
+            disabled={enviando}
+            className="flex-1 py-2.5 border border-cred-gray-border text-cred-gray-text rounded-lg font-medium hover:bg-cred-gray-neutral transition-colors text-sm disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 py-2.5 bg-cred-green-dark text-white rounded-lg font-medium hover:bg-cred-green-medium transition-colors text-sm"
+            disabled={enviando}
+            className="flex-1 py-2.5 bg-cred-green-dark text-white rounded-lg font-medium hover:bg-cred-green-medium transition-colors text-sm disabled:opacity-70 flex items-center justify-center gap-2"
           >
-            Confirmar Interesse
+            {enviando ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              'Confirmar Interesse'
+            )}
           </button>
         </div>
       </div>
