@@ -1,5 +1,6 @@
 package com.projeto.amazonhacking.models;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -49,6 +50,15 @@ public class Usuario implements UserDetails{
 
     @Enumerated(EnumType.STRING)
     private UsuarioRole role;
+
+    // Campos adicionados na V6 — opcionais (nullable).
+    private String cpf;
+
+    @Column(name = "data_nascimento")
+    private LocalDate dataNascimento;
+
+    private String municipio;
+    private String estado;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -126,6 +136,38 @@ public class Usuario implements UserDetails{
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
+    public String getMunicipio() {
+        return municipio;
+    }
+
+    public void setMunicipio(String municipio) {
+        this.municipio = municipio;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 
     @Override

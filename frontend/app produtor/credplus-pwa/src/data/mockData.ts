@@ -48,7 +48,7 @@ export interface Safra {
   syncedAt: string | null;
 }
 
-const INITIAL_SAFRAS: Safra[] = [
+export const INITIAL_SAFRAS: Safra[] = [
   {
     id: 'safra-001',
     nome: 'Safra Cacau Tradicional',
@@ -123,54 +123,3 @@ export const unidades: { value: Unidade; label: string }[] = [
   { value: 'TON', label: 'Toneladas (TON)' },
   { value: 'SACAS', label: 'Sacas (60kg)' },
 ];
-
-const STORAGE_KEY = 'cred_safras';
-
-function initStorage(): void {
-  if (!localStorage.getItem(STORAGE_KEY)) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SAFRAS));
-  }
-}
-
-export const SafraStorage = {
-  getAll(): Safra[] {
-    initStorage();
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [...INITIAL_SAFRAS];
-    } catch {
-      return [...INITIAL_SAFRAS];
-    }
-  },
-
-  save(safras: Safra[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(safras));
-  },
-
-  add(safra: Safra): void {
-    const safras = this.getAll();
-    safras.unshift(safra);
-    this.save(safras);
-  },
-
-  getById(id: string): Safra | undefined {
-    return this.getAll().find((s) => s.id === id);
-  },
-
-  update(id: string, updates: Partial<Safra>): void {
-    const safras = this.getAll();
-    const idx = safras.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      safras[idx] = { ...safras[idx], ...updates };
-      this.save(safras);
-    }
-  },
-
-  getByProdutor(produtorId: string): Safra[] {
-    return this.getAll().filter((s) => s.produtorId === produtorId);
-  },
-
-  reset(): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SAFRAS));
-  },
-};

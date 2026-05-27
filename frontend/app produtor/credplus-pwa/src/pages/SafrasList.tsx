@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { PlusCircle, Search, SlidersHorizontal, X } from 'lucide-react';
-import { SafraStorage, mockUser, tiposCultura } from '@/data/mockData';
+import { tiposCultura } from '@/data/mockData';
 import type { Safra, StatusSafra, TipoCultura } from '@/data/mockData';
+import { safraRepo } from '@/db/db';
+import { useSafrasChanged } from '@/hooks/useSync';
 import SafraCard from '@/components/safras/SafraCard';
 
 const STATUS_LABELS: Record<StatusSafra, string> = {
@@ -14,17 +16,30 @@ const STATUS_LABELS: Record<StatusSafra, string> = {
   ENCERRADA: 'Encerrada',
 };
 
+function getProdutorId(): string {
+  const salvo = localStorage.getItem('cred_user');
+  if (!salvo) return '';
+  try { return (JSON.parse(salvo) as { id: string }).id ?? ''; } catch { return ''; }
+}
+
 export default function SafrasList() {
   const navigate = useNavigate();
+  const produtorId = getProdutorId();
   const [safras, setSafras] = useState<Safra[]>([]);
   const [busca, setBusca] = useState('');
   const [filterStatus, setFilterStatus] = useState<StatusSafra | ''>('');
   const [filterTipo, setFilterTipo] = useState<TipoCultura | ''>('');
   const [showFilters, setShowFilters] = useState(false);
 
+  const carregarSafras = useCallback(() => {
+    safraRepo.getByProdutor(produtorId).then(setSafras);
+  }, [produtorId]);
+
   useEffect(() => {
-    setSafras(SafraStorage.getByProdutor(mockUser.id));
-  }, []);
+    carregarSafras();
+  }, [carregarSafras]);
+
+  useSafrasChanged(carregarSafras);
 
   const filtered = safras.filter((s) => {
     const matchBusca =

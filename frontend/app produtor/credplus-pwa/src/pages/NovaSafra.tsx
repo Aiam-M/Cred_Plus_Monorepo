@@ -11,13 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import {
-  SafraStorage,
-  mockUser,
-  tiposCultura,
-  unidades,
-} from '@/data/mockData';
-import type { Plantacao, SafraImagem, TipoCultura, Unidade } from '@/data/mockData';
+import { tiposCultura, unidades } from '@/data/mockData';
+
+function getProdutorId(): string {
+  const salvo = localStorage.getItem('cred_user');
+  if (!salvo) return '';
+  try { return (JSON.parse(salvo) as { id: string }).id ?? ''; } catch { return ''; }
+}
+import type { Plantacao, Safra, SafraImagem, TipoCultura, Unidade } from '@/data/mockData';
+import { safraRepo } from '@/db/db';
+import { sincronizar } from '@/services/syncService';
+import { notificarSafrasMudaram } from '@/hooks/useSync';
 
 const TOTAL_STEPS = 3;
 
@@ -103,32 +107,32 @@ export default function NovaSafra() {
 
   const handleSalvar = async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 600));
 
-    const novaSafra = {
+    const novaSafra: Safra = {
       id: crypto.randomUUID(),
       nome,
       areaHectares: parseFloat(area),
-      produtorId: mockUser.id,
-      status: 'AGUARDANDO_SYNC' as const,
+      produtorId: getProdutorId(),
+      status: 'AGUARDANDO_SYNC',
       plantacoes,
       imagens,
       createdAt: new Date().toISOString(),
       syncedAt: null,
     };
 
-    SafraStorage.add(novaSafra);
+    // Salva primeiro no banco local (IndexedDB). Isso funciona mesmo offline.
+    await safraRepo.add(novaSafra);
+    notificarSafrasMudaram();
 
-    // Simula sincronização automática quando online
+    // Se houver internet, tenta sincronizar com o servidor logo em seguida.
     if (navigator.onLine) {
       toast.success('✅ Safra salva! Sincronizando...', { duration: 2000 });
-      setTimeout(() => {
-        SafraStorage.update(novaSafra.id, {
-          status: 'AGUARDANDO_VALIDACAO_SATELITE',
-          syncedAt: new Date().toISOString(),
-        });
-        toast.success('🛰️ Safra enviada para validação por satélite!', { duration: 3000 });
-      }, 2500);
+      sincronizar().then((resultado) => {
+        if (resultado.enviadas > 0) {
+          notificarSafrasMudaram();
+          toast.success('🛰️ Safra enviada para validação por satélite!', { duration: 3000 });
+        }
+      });
     } else {
       toast.info('📱 Safra salva offline. Será sincronizada quando houver conexão.', {
         duration: 4000,

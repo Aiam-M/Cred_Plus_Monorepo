@@ -1,18 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { LogOut, Bell, RefreshCw, ChevronRight, Wifi, WifiOff } from 'lucide-react';
-import { SafraStorage, mockUser } from '@/data/mockData';
 import type { Safra } from '@/data/mockData';
+import { safraRepo } from '@/db/db';
+import { TOKEN_KEY } from '@/services/authService';
+import type { PerfilProdutor } from '@/services/produtorService';
+
+// Lê o perfil salvo no localStorage após o login.
+// Se por algum motivo não existir (sessão antiga), usa valores vazios como fallback.
+function carregarPerfil(): PerfilProdutor {
+  const salvo = localStorage.getItem('cred_user');
+  if (salvo) {
+    try {
+      return JSON.parse(salvo) as PerfilProdutor;
+    } catch {
+      // Se o JSON estiver corrompido, ignora e usa o fallback abaixo.
+    }
+  }
+  return { id: '', nome: '', email: '', role: 'PRODUTOR', associacaoId: 0, nomeAssociacao: '', municipio: '', estado: '' };
+}
 
 export default function Perfil() {
   const navigate = useNavigate();
+  const usuario = carregarPerfil();
   const [safras, setSafras] = useState<Safra[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
 
   useEffect(() => {
-    setSafras(SafraStorage.getByProdutor(mockUser.id));
+    safraRepo.getByProdutor(usuario.id).then(setSafras);
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -30,6 +47,7 @@ export default function Perfil() {
   const handleLogout = () => {
     localStorage.removeItem('cred_authenticated');
     localStorage.removeItem('cred_user');
+    localStorage.removeItem(TOKEN_KEY);
     navigate('/login', { replace: true });
     window.location.reload();
   };
@@ -47,12 +65,12 @@ export default function Perfil() {
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-[#2D5016] flex items-center justify-center text-white text-2xl font-bold shrink-0">
-              {mockUser.nome.charAt(0)}
+              {usuario.nome ? usuario.nome.charAt(0).toUpperCase() : '?'}
             </div>
             <div className="min-w-0">
-              <h2 className="font-bold text-gray-900 text-lg">{mockUser.nome}</h2>
-              <p className="text-sm text-gray-500 truncate">{mockUser.email}</p>
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{mockUser.associacao.nome}</p>
+              <h2 className="font-bold text-gray-900 text-lg">{usuario.nome || 'Produtor'}</h2>
+              <p className="text-sm text-gray-500 truncate">{usuario.email}</p>
+              <p className="text-xs text-gray-400 mt-0.5 truncate">{usuario.nomeAssociacao}</p>
             </div>
           </div>
 
@@ -63,7 +81,7 @@ export default function Perfil() {
               <><WifiOff size={14} className="text-gray-400" /><span className="text-xs text-gray-500 font-medium">Offline</span></>
             )}
             <span className="text-gray-200 mx-1">·</span>
-            <span className="text-xs text-gray-400">{mockUser.associacao.municipio} - {mockUser.associacao.estado}</span>
+            <span className="text-xs text-gray-400">{usuario.municipio} - {usuario.estado}</span>
           </div>
         </div>
       </div>

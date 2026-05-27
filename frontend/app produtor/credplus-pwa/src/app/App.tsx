@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { Toaster } from '@/app/components/ui/sonner';
+import { seedIfEmpty } from '@/db/db';
 import Layout from '@/components/layout/Layout';
 import Login from '@/pages/Login';
+import Cadastro from '@/pages/Cadastro';
 import Dashboard from '@/pages/Dashboard';
 import NovaSafra from '@/pages/NovaSafra';
 import SafrasList from '@/pages/SafrasList';
@@ -14,11 +16,16 @@ export default function App() {
     localStorage.getItem('cred_authenticated') === 'true',
   );
 
+  // Popula o banco local com dados de demonstração na primeira abertura.
+  useEffect(() => {
+    seedIfEmpty();
+  }, []);
+
   return (
     <>
       <BrowserRouter>
         <Routes>
-          {/* Rota pública */}
+          {/* Rotas públicas */}
           <Route
             path="/login"
             element={
@@ -27,6 +34,12 @@ export default function App() {
               ) : (
                 <Login onLogin={() => setIsAuthenticated(true)} />
               )
+            }
+          />
+          <Route
+            path="/cadastro"
+            element={
+              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Cadastro />
             }
           />
 

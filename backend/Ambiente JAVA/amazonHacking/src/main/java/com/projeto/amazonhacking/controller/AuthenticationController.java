@@ -47,6 +47,12 @@ public class AuthenticationController {
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.passwordHash());
         Usuario newUsuario = new Usuario(data.nome(), data.email(), encryptedPassword, data.associacaoId(), data.role());
 
+        // Salva os campos adicionais de cadastro (opcionais — podem ser null).
+        newUsuario.setCpf(data.cpf());
+        newUsuario.setDataNascimento(data.dataNascimento());
+        newUsuario.setMunicipio(data.municipio());
+        newUsuario.setEstado(data.estado());
+
         this.repository.save(newUsuario);
 
         return ResponseEntity.ok().build();

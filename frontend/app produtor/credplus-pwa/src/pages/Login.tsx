@@ -1,30 +1,45 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { mockUser } from '@/data/mockData';
+import { login, TOKEN_KEY } from '@/services/authService';
+import { fetchPerfil } from '@/services/produtorService';
 
 interface LoginProps {
   onLogin: () => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('joao@jutaiteua.org');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
     setLoading(true);
+    setErro('');
 
-    // Simula latência de login
-    await new Promise((r) => setTimeout(r, 800));
+    try {
+      // 1. Autentica e obtém o token JWT.
+      const token = await login(email, password);
+      localStorage.setItem(TOKEN_KEY, token);
 
-    localStorage.setItem('cred_authenticated', 'true');
-    localStorage.setItem('cred_user', JSON.stringify(mockUser));
-    setLoading(false);
-    onLogin();
+      // 2. Busca o perfil real do produtor no backend usando o token.
+      const perfil = await fetchPerfil();
+      localStorage.setItem('cred_user', JSON.stringify(perfil));
+
+      // 3. Marca a sessão como ativa e entra no app.
+      localStorage.setItem('cred_authenticated', 'true');
+      onLogin();
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível entrar.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,6 +83,12 @@ export default function Login({ onLogin }: LoginProps) {
             />
           </div>
 
+          {erro && (
+            <p className="text-center text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl py-2 px-3">
+              {erro}
+            </p>
+          )}
+
           <Button
             type="submit"
             disabled={loading || !email || !password}
@@ -75,14 +96,20 @@ export default function Login({ onLogin }: LoginProps) {
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </Button>
-
-          <p className="text-center text-xs text-gray-400">
-            Use qualquer senha para a demonstração
-          </p>
         </form>
       </div>
 
-      <p className="text-green-300 text-xs mt-8">
+      <p className="text-green-200 text-sm mt-6">
+        Não tem conta?{' '}
+        <button
+          onClick={() => navigate('/cadastro')}
+          className="font-semibold underline underline-offset-2 hover:text-white transition-colors"
+        >
+          Cadastre-se
+        </button>
+      </p>
+
+      <p className="text-green-300 text-xs mt-4">
         © 2026 Cred+ · Amazon People
       </p>
     </div>

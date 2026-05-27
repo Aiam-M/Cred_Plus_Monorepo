@@ -1,6 +1,7 @@
 package com.projeto.amazonhacking.services;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -52,6 +53,40 @@ public class SafraService {
     public GetSafraDTO buscarPorId(Integer id) {
         Safra safra = safraRepository.buscarPorIdComDetalhes(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Safra não encontrada"));
+        return toDTO(safra);
+    }
+
+    /**
+     * Lista as safras de um produtor específico (app do produtor).
+     * Lê sempre do banco — os dados nunca vêm direto do IndexedDB do aparelho.
+     * @param produtorId id do produtor autenticado
+     * @return safras do produtor no formato de DTO
+     */
+    public List<GetSafraDTO> listarPorProdutor(UUID produtorId) {
+        return safraRepository.buscarPorProdutorComDetalhes(produtorId).stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    /**
+     * Busca uma safra do próprio produtor pelo id.
+     * Se a safra não existir OU não pertencer ao produtor, lança "não encontrada"
+     * (404) de propósito: não revela a existência de safras de outros produtores.
+     * @param safraId id da safra
+     * @param produtorId id do produtor autenticado
+     * @return a safra no formato de DTO
+     * @throws RecursoNaoEncontradoException se não existir ou não for do produtor
+     */
+    public GetSafraDTO buscarDoProdutor(Integer safraId, UUID produtorId) {
+        Safra safra = safraRepository.buscarPorIdComDetalhes(safraId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Safra não encontrada"));
+
+        boolean ehDono = safra.getProdutor() != null
+                && produtorId.equals(safra.getProdutor().getId());
+        if (!ehDono) {
+            throw new RecursoNaoEncontradoException("Safra não encontrada");
+        }
+
         return toDTO(safra);
     }
 

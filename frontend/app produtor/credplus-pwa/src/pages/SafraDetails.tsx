@@ -4,8 +4,11 @@ import { ArrowLeft, Leaf, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { SafraStorage, tiposCultura } from '@/data/mockData';
+import { tiposCultura } from '@/data/mockData';
 import type { Safra } from '@/data/mockData';
+import { safraRepo } from '@/db/db';
+import { sincronizar } from '@/services/syncService';
+import { notificarSafrasMudaram } from '@/hooks/useSync';
 import StatusBadge from '@/components/common/StatusBadge';
 
 export default function SafraDetails() {
@@ -17,8 +20,7 @@ export default function SafraDetails() {
 
   useEffect(() => {
     if (id) {
-      const found = SafraStorage.getById(id);
-      setSafra(found ?? null);
+      safraRepo.getById(id).then((found) => setSafra(found ?? null));
     }
   }, [id]);
 
@@ -45,15 +47,16 @@ export default function SafraDetails() {
   const handleSync = async () => {
     if (!canSync) return;
     setSyncing(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    SafraStorage.update(safra.id, {
-      status: 'AGUARDANDO_VALIDACAO_SATELITE',
-      syncedAt: new Date().toISOString(),
-    });
-    const updated = SafraStorage.getById(safra.id);
-    setSafra(updated ?? null);
+    const resultado = await sincronizar();
+    if (resultado.enviadas > 0) {
+      notificarSafrasMudaram();
+      const updated = await safraRepo.getById(safra.id);
+      setSafra(updated ?? null);
+      toast.success('🛰️ Safra sincronizada com sucesso!');
+    } else if (resultado.erro) {
+      toast.error(resultado.erro);
+    }
     setSyncing(false);
-    toast.success('🛰️ Safra sincronizada com sucesso!');
   };
 
   return (

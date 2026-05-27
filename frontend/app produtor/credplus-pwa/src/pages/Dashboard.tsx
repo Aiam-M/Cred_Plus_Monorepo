@@ -1,39 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { PlusCircle, RefreshCw, ArrowRight } from 'lucide-react';
-import { mockUser, SafraStorage } from '@/data/mockData';
 import type { Safra } from '@/data/mockData';
+import { safraRepo } from '@/db/db';
+import { sincronizar } from '@/services/syncService';
+import { useSafrasChanged } from '@/hooks/useSync';
 import SafraCard from '@/components/safras/SafraCard';
 import OnlineIndicator from '@/components/common/OnlineIndicator';
 
+interface UsuarioLocal {
+  id: string;
+  nome: string;
+  municipio: string;
+  estado: string;
+  nomeAssociacao: string;
+}
+
+// Lê os dados do produtor salvos no localStorage após o login.
+function carregarUsuario(): UsuarioLocal {
+  const salvo = localStorage.getItem('cred_user');
+  if (salvo) {
+    try {
+      return JSON.parse(salvo) as UsuarioLocal;
+    } catch {
+      // fallback abaixo
+    }
+  }
+  return { id: '', nome: '', municipio: '', estado: '', nomeAssociacao: '' };
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const usuario = carregarUsuario();
   const [safras, setSafras] = useState<Safra[]>([]);
-  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const carregarSafras = useCallback(() => {
+    return safraRepo.getByProdutor(usuario.id).then(setSafras);
+  }, [usuario.id]);
 
   useEffect(() => {
-    setSafras(SafraStorage.getByProdutor(mockUser.id));
-  }, []);
+    carregarSafras();
+  }, [carregarSafras]);
+
+  // Recarrega a lista quando uma sincronização (em segundo plano) altera as safras.
+  useSafrasChanged(carregarSafras);
 
   const aguardandoSync = safras.filter((s) => s.status === 'AGUARDANDO_SYNC').length;
   const validadas = safras.filter((s) => s.status === 'ATIVA').length;
   const totalHa = safras.reduce((sum, s) => sum + s.areaHectares, 0);
 
-  const handleSimulateSync = async () => {
-    const pendentes = safras.filter((s) => s.status === 'AGUARDANDO_SYNC');
-    if (pendentes.length === 0 || !navigator.onLine) return;
-
-    for (const safra of pendentes) {
-      setSyncingId(safra.id);
-      await new Promise((r) => setTimeout(r, 1200));
-      SafraStorage.update(safra.id, {
-        status: 'AGUARDANDO_VALIDACAO_SATELITE',
-        syncedAt: new Date().toISOString(),
-      });
+  const handleSync = async () => {
+    if (syncing || !navigator.onLine) return;
+    setSyncing(true);
+    const resultado = await sincronizar();
+    if (resultado.enviadas > 0) {
+      await carregarSafras();
     }
-
-    setSyncingId(null);
-    setSafras(SafraStorage.getByProdutor(mockUser.id));
+    setSyncing(false);
   };
 
   return (
@@ -42,12 +66,12 @@ export default function Dashboard() {
       <div className="bg-[#2D5016] text-white px-5 pt-12 pb-10">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-green-200 text-sm mb-1">{mockUser.associacao.municipio} · {mockUser.associacao.estado}</p>
+            <p className="text-green-200 text-sm mb-1">{usuario.municipio} · {usuario.estado}</p>
             <h1 className="text-2xl font-bold leading-tight">
-              Olá, {mockUser.nome.split(' ')[0]}! 👋
+              Olá, {usuario.nome ? usuario.nome.split(' ')[0] : 'Produtor'}! 👋
             </h1>
             <p className="text-green-100 text-xs mt-1 max-w-[220px] leading-relaxed">
-              {mockUser.associacao.nome}
+              {usuario.nomeAssociacao}
             </p>
           </div>
           <OnlineIndicator />
@@ -79,12 +103,12 @@ export default function Dashboard() {
             <p className="text-xs text-yellow-600 mt-0.5">Você está online agora</p>
           </div>
           <button
-            onClick={handleSimulateSync}
-            disabled={syncingId !== null}
+            onClick={handleSync}
+            disabled={syncing}
             className="flex items-center gap-1.5 bg-yellow-600 text-white text-xs font-medium px-3 py-2 rounded-xl disabled:opacity-60 transition-opacity"
           >
-            <RefreshCw size={13} className={syncingId ? 'animate-spin' : ''} />
-            {syncingId ? 'Sincronizando...' : 'Sincronizar'}
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Sincronizando...' : 'Sincronizar'}
           </button>
         </div>
       )}

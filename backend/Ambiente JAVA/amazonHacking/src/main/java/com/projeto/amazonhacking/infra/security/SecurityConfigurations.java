@@ -49,6 +49,10 @@ public class SecurityConfigurations {
                 // Autenticação de empresas (dashboard).
                 .requestMatchers(HttpMethod.POST, "/auth/empresa/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/empresa/cadastro").permitAll()
+                // App do produtor (sincronização offline e leitura das próprias safras):
+                // somente quem tem ROLE_USER (produtores).
+                .requestMatchers(HttpMethod.POST, "/sync").hasRole("USER")
+                .requestMatchers("/produtor/**").hasRole("USER")
                 // Endpoints do dashboard de empresas: somente quem tem ROLE_EMPRESA.
                 .requestMatchers("/dashboard/**").hasRole("EMPRESA")
                 .requestMatchers("/safras/**").hasRole("EMPRESA")

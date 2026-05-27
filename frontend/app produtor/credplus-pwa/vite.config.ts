@@ -14,6 +14,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
         navigateFallback: 'index.html',
+        // Serve index.html para qualquer rota do app (necessário para SPA com React Router).
+        // Sem isso, o workbox só cobre "/" e rotas como /cadastro ficam sem fallback.
+        navigateFallbackAllowlist: [/^\//],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {

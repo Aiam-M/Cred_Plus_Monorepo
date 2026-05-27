@@ -2,6 +2,7 @@ package com.projeto.amazonhacking.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,26 @@ import org.springframework.data.jpa.repository.Query;
 import com.projeto.amazonhacking.models.Safra;
 
 public interface SafraRepository extends JpaRepository<Safra, Integer> {
+
+    /**
+     * Busca uma safra pelo local_id (UUID gerado no app). Usado na sincronização
+     * para garantir idempotência: se já existir, o cadastro não é duplicado.
+     */
+    Optional<Safra> findByLocalId(UUID localId);
+
+    /**
+     * Lista as safras de um produtor específico, já com associação e plantações
+     * carregadas (evita N+1 e LazyInitializationException ao montar o DTO).
+     */
+    @Query("""
+            SELECT DISTINCT s FROM Safra s
+            LEFT JOIN FETCH s.produtor p
+            LEFT JOIN FETCH p.associacao
+            LEFT JOIN FETCH s.plantacoes
+            WHERE p.id = :produtorId
+            ORDER BY s.id DESC
+            """)
+    List<Safra> buscarPorProdutorComDetalhes(UUID produtorId);
 
     /**
      * Busca todas as safras já com produtor, associação e plantações carregados,

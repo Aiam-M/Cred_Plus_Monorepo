@@ -2,6 +2,7 @@ package com.projeto.amazonhacking.models;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,6 +47,14 @@ public class Safra {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // UUID gerado pelo app offline. Usado como chave de idempotência na sincronização.
+    @Column(name = "local_id", unique = true)
+    private UUID localId;
+
+    // Quando a safra chegou ao backend (data do servidor).
+    @Column(name = "synced_at")
+    private LocalDateTime syncedAt;
 
     @OneToMany(mappedBy = "safra", fetch = FetchType.LAZY)
     private List<Plantacao> plantacoes;
@@ -115,6 +124,22 @@ public class Safra {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public UUID getLocalId() {
+        return localId;
+    }
+
+    public void setLocalId(UUID localId) {
+        this.localId = localId;
+    }
+
+    public LocalDateTime getSyncedAt() {
+        return syncedAt;
+    }
+
+    public void setSyncedAt(LocalDateTime syncedAt) {
+        this.syncedAt = syncedAt;
     }
 
     public List<Plantacao> getPlantacoes() {

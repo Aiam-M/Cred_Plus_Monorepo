@@ -1,5 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { Home, PlusCircle, List, User } from 'lucide-react';
+import { useSync } from '@/hooks/useSync';
 
 const navItems = [
   { icon: Home, label: 'Início', path: '/dashboard' },
@@ -9,6 +10,10 @@ const navItems = [
 ] as const;
 
 export default function Layout() {
+  // Ativa a sincronização automática: quando a internet voltar, envia as
+  // safras pendentes do banco local para o servidor.
+  useSync();
+
   const navigate = useNavigate();
   const location = useLocation();
 
