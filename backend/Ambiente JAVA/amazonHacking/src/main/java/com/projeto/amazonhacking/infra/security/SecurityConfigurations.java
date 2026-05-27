@@ -53,6 +53,7 @@ public class SecurityConfigurations {
                 .requestMatchers("/dashboard/**").hasRole("EMPRESA")
                 .requestMatchers("/safras/**").hasRole("EMPRESA")
                 .requestMatchers("/interesses/**").hasRole("EMPRESA")
+                .requestMatchers("/empresa", "/empresa/**").hasRole("EMPRESA")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

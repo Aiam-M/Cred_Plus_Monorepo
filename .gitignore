@@ -33,7 +33,7 @@ service-account.json
 .idea/
 .vscode/
 
-# Claude Code (contém settings.local.json com permissões e possivelmente env vars)
+
 .claude/
 
 # Sistema

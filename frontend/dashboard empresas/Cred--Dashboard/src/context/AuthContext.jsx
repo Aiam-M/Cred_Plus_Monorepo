@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const data = await api.post('/cred/auth/empresa/login', { email, password });
-      const dadosEmpresa = { nome: data.nome, email: data.email, cnpj: data.cnpj, segmento: data.segmento };
+      const dadosEmpresa = { nome: data.nome, email: data.email, cnpj: data.cnpj, segmento: data.segmento, createdAt: data.createdAt };
       localStorage.setItem('cred_token', data.token);
       localStorage.setItem('cred_empresa', JSON.stringify(dadosEmpresa));
       setEmpresa(dadosEmpresa);
@@ -62,6 +62,16 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Atualiza os dados da empresa no estado e no localStorage após o usuário salvar o perfil.
+   * Mantém o CNPJ e o createdAt intocados (não vêm na resposta do PUT /empresa).
+   */
+  const atualizarEmpresa = (novosDados) => {
+    const dadosAtualizados = { ...empresa, ...novosDados };
+    localStorage.setItem('cred_empresa', JSON.stringify(dadosAtualizados));
+    setEmpresa(dadosAtualizados);
+  };
+
   const logout = () => {
     localStorage.removeItem('cred_token');
     localStorage.removeItem('cred_empresa');
@@ -70,7 +80,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, empresa, loading, login, cadastrar, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, empresa, loading, login, cadastrar, logout, atualizarEmpresa }}>
       {children}
     </AuthContext.Provider>
   );

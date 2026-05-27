@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Building2, Hash, Shield, Bell, Check, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 const SEGMENTOS = [
   'Indústria Alimentícia',
@@ -10,17 +11,6 @@ const SEGMENTOS = [
   'Farmacêutico',
   'Outros',
 ];
-
-const MOCK_EMPRESA = {
-  nome: 'Empresa Exemplo Ltda',
-  cnpj: '12.345.678/0001-90',
-  segmento: 'Indústria Alimentícia',
-  email: 'contato@empresa-exemplo.com.br',
-  plano: 'Acesso Empresarial',
-  membro_desde: '2026-03-01',
-  interesses: 3,
-  safrasVisualizadas: 12,
-};
 
 function StatCard({ label, value, icon }) {
   return (
@@ -45,15 +35,16 @@ function Section({ title, icon: Icon, children }) {
 }
 
 export default function Perfil() {
-  const { empresa } = useAuth();
+  const { empresa, atualizarEmpresa } = useAuth();
 
   const [form, setForm] = useState({
-    nome: empresa?.nome ?? MOCK_EMPRESA.nome,
-    segmento: empresa?.segmento ?? MOCK_EMPRESA.segmento,
-    email: empresa?.email ?? MOCK_EMPRESA.email,
+    nome: empresa?.nome ?? '',
+    segmento: empresa?.segmento ?? SEGMENTOS[0],
+    email: empresa?.email ?? '',
   });
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  const [erroSalvar, setErroSalvar] = useState('');
 
   const [senhaForm, setSenhaForm] = useState({ atual: '', nova: '', confirmar: '' });
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -66,17 +57,37 @@ export default function Perfil() {
     respostaInteresse: true,
   });
 
-  const handleSalvar = (e) => {
+  const [totalInteresses, setTotalInteresses] = useState(null);
+
+  // Busca o total de interesses enviados pela empresa.
+  useEffect(() => {
+    api.get('/cred/interesses/meus')
+      .then((lista) => setTotalInteresses(lista.length))
+      .catch(() => setTotalInteresses('—'));
+  }, []);
+
+  const handleSalvar = async (e) => {
     e.preventDefault();
     setSalvando(true);
-    setTimeout(() => {
-      setSalvando(false);
+    setErroSalvar('');
+    try {
+      const atualizado = await api.put('/cred/empresa', {
+        nome: form.nome,
+        segmento: form.segmento,
+        email: form.email,
+      });
+      // Atualiza o contexto global para o Header e outras telas refletirem a mudança.
+      atualizarEmpresa({ nome: atualizado.nome, segmento: atualizado.segmento, email: atualizado.email });
       setSalvo(true);
       setTimeout(() => setSalvo(false), 3000);
-    }, 800);
+    } catch (err) {
+      setErroSalvar(err.message || 'Erro ao salvar. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
   };
 
-  const handleSalvarSenha = (e) => {
+  const handleSalvarSenha = async (e) => {
     e.preventDefault();
     setSenhaErro('');
     if (senhaForm.nova.length < 6) {
@@ -88,17 +99,24 @@ export default function Perfil() {
       return;
     }
     setSalvandoSenha(true);
-    setTimeout(() => {
-      setSalvandoSenha(false);
+    try {
+      await api.put('/cred/empresa/senha', {
+        senhaAtual: senhaForm.atual,
+        novaSenha: senhaForm.nova,
+      });
       setSenhaSalva(true);
       setSenhaForm({ atual: '', nova: '', confirmar: '' });
       setTimeout(() => setSenhaSalva(false), 3000);
-    }, 800);
+    } catch (err) {
+      setSenhaErro(err.message || 'Erro ao alterar senha. Tente novamente.');
+    } finally {
+      setSalvandoSenha(false);
+    }
   };
 
-  const membroDesde = new Date(MOCK_EMPRESA.membro_desde).toLocaleDateString('pt-BR', {
-    month: 'long', year: 'numeric',
-  });
+  const membroDesde = empresa?.createdAt
+    ? new Date(empresa.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    : '—';
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -107,15 +125,15 @@ export default function Perfil() {
         <div className="flex items-center gap-5">
           <div className="w-16 h-16 bg-cred-green-dark rounded-2xl flex items-center justify-center shrink-0">
             <span className="text-white text-2xl font-bold">
-              {form.nome.charAt(0).toUpperCase()}
+              {(form.nome || empresa?.email || '?').charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-cred-gray-text truncate">{form.nome}</h1>
+            <h1 className="text-xl font-bold text-cred-gray-text truncate">{form.nome || empresa?.email}</h1>
             <p className="text-sm text-gray-400 mt-0.5">{form.segmento}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cred-green-dark/10 text-cred-green-dark text-xs font-medium rounded-full">
-                ✅ {MOCK_EMPRESA.plano}
+                ✅ Acesso Empresarial
               </span>
               <span className="text-xs text-gray-400">· Membro desde {membroDesde}</span>
             </div>
@@ -123,9 +141,12 @@ export default function Perfil() {
         </div>
 
         {/* Stats rápidas */}
-        <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-cred-gray-border">
-          <StatCard label="Interesses enviados" value={MOCK_EMPRESA.interesses} icon="📋" />
-          <StatCard label="Safras visualizadas" value={MOCK_EMPRESA.safrasVisualizadas} icon="🌱" />
+        <div className="grid grid-cols-1 gap-3 mt-5 pt-5 border-t border-cred-gray-border">
+          <StatCard
+            label="Interesses enviados"
+            value={totalInteresses ?? '…'}
+            icon="📋"
+          />
         </div>
       </div>
 
@@ -156,7 +177,7 @@ export default function Perfil() {
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
               <input
                 type="text"
-                value={empresa?.cnpj ?? MOCK_EMPRESA.cnpj}
+                value={empresa?.cnpj ?? ''}
                 readOnly
                 className="w-full pl-9 pr-4 py-2.5 border border-cred-gray-border rounded-lg text-sm bg-cred-gray-neutral text-gray-400 cursor-not-allowed"
               />
@@ -191,6 +212,12 @@ export default function Perfil() {
               />
             </div>
           </div>
+
+          {erroSalvar && (
+            <p className="text-xs text-cred-red-error bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              ⚠️ {erroSalvar}
+            </p>
+          )}
 
           <div className="flex items-center gap-3 pt-1">
             <button

@@ -8,6 +8,7 @@ public record EmpresaLoginResponseDTO(
         String nome,
         String email,
         String cnpj,
-        String segmento
+        String segmento,
+        String createdAt
 ) {
 }

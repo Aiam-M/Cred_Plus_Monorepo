@@ -50,8 +50,9 @@ public class EmpresaAuthController {
         Empresa empresa = (Empresa) auth.getPrincipal();
         String token = tokenService.generateToken(empresa);
 
+        String createdAt = empresa.getCreatedAt() != null ? empresa.getCreatedAt().toString() : null;
         return ResponseEntity.ok(new EmpresaLoginResponseDTO(
-                token, empresa.getNome(), empresa.getEmail(), empresa.getCnpj(), empresa.getSegmento()));
+                token, empresa.getNome(), empresa.getEmail(), empresa.getCnpj(), empresa.getSegmento(), createdAt));
     }
 
     /**
