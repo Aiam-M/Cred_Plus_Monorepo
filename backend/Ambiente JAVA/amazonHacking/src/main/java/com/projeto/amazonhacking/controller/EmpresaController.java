@@ -42,12 +42,14 @@ public class EmpresaController {
 
     /**
      * Altera a senha da empresa autenticada.
+     * Retorna 204 (sem corpo): evita que o cliente tente fazer parse de JSON de
+     * uma resposta que era só texto.
      */
     @PutMapping("/senha")
-    public ResponseEntity<String> alterarSenha(
+    public ResponseEntity<Void> alterarSenha(
             @AuthenticationPrincipal Empresa empresa,
             @RequestBody @Valid AlterarSenhaDTO dto) {
         empresaService.alterarSenha(empresa.getId(), dto);
-        return ResponseEntity.ok("Senha alterada com sucesso");
+        return ResponseEntity.noContent().build();
     }
 }

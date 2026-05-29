@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -41,7 +41,7 @@ export default function Login() {
 
                 {mensagemSucesso && !error && (
                     <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700 text-sm">
-                        <span>✅</span>
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" />
                         <span>{mensagemSucesso}</span>
                     </div>
                 )}

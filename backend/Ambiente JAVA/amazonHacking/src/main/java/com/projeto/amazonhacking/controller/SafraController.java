@@ -14,12 +14,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.projeto.amazonhacking.dto.agroscore.GetAgroScoreDTO;
+import com.projeto.amazonhacking.dto.imagem.SafraImagemDTO;
 import com.projeto.amazonhacking.dto.interesse.CriarInteresseDTO;
 import com.projeto.amazonhacking.dto.interesse.GetInteresseDTO;
 import com.projeto.amazonhacking.dto.rastreabilidade.GetRastreabilidadeDTO;
 import com.projeto.amazonhacking.dto.safra.GetSafraDTO;
 import com.projeto.amazonhacking.models.Empresa;
 import com.projeto.amazonhacking.services.AgroScoreService;
+import com.projeto.amazonhacking.services.ImagemService;
 import com.projeto.amazonhacking.services.InteresseService;
 import com.projeto.amazonhacking.services.SafraService;
 import com.projeto.amazonhacking.services.TraceabilityService;
@@ -39,15 +41,18 @@ public class SafraController {
     private final AgroScoreService agroScoreService;
     private final TraceabilityService traceabilityService;
     private final InteresseService interesseService;
+    private final ImagemService imagemService;
 
     public SafraController(SafraService safraService,
                            AgroScoreService agroScoreService,
                            TraceabilityService traceabilityService,
-                           InteresseService interesseService) {
+                           InteresseService interesseService,
+                           ImagemService imagemService) {
         this.safraService = safraService;
         this.agroScoreService = agroScoreService;
         this.traceabilityService = traceabilityService;
         this.interesseService = interesseService;
+        this.imagemService = imagemService;
     }
 
     /**
@@ -83,6 +88,14 @@ public class SafraController {
     @GetMapping("/{id}/rastreabilidade")
     public ResponseEntity<GetRastreabilidadeDTO> rastreabilidade(@PathVariable Integer id) {
         return ResponseEntity.ok(traceabilityService.buscarCadeia(id));
+    }
+
+    /**
+     * Fotos enviadas pelo produtor para a safra (galeria da aba Visão Geral).
+     */
+    @GetMapping("/{id}/imagens")
+    public ResponseEntity<List<SafraImagemDTO>> imagens(@PathVariable Integer id) {
+        return ResponseEntity.ok(imagemService.listarPorSafra(id));
     }
 
     /**

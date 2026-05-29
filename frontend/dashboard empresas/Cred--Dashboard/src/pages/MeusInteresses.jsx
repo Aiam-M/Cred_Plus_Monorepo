@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, ClipboardList } from 'lucide-react';
 import { api } from '../services/api';
 
 const STATUS_STYLE = {
@@ -41,14 +42,15 @@ export default function MeusInteresses() {
       {loading && <Spinner />}
 
       {!loading && error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-          ⚠️ Erro ao carregar interesses: {error}
+        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Erro ao carregar interesses: {error}
         </div>
       )}
 
       {!loading && !error && interesses.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-cred-gray-border">
-          <p className="text-4xl mb-3">📋</p>
+        <div className="flex flex-col items-center text-center py-16 bg-white rounded-2xl border border-cred-gray-border">
+          <ClipboardList className="w-9 h-9 text-gray-300 mb-3" />
           <p className="text-gray-500 font-medium">Você ainda não demonstrou interesse em nenhuma safra.</p>
           <button
             type="button"

@@ -11,7 +11,7 @@ interface LoginProps {
 
 export default function Login({ onLogin }: LoginProps) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('joao@jutaiteua.org');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');

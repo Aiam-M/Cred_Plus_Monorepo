@@ -9,6 +9,7 @@ import SafrasList from '../pages/SafrasList';
 import SafraDetails from '../pages/SafraDetails';
 import MeusInteresses from '../pages/MeusInteresses';
 import Perfil from '../pages/Perfil';
+import AgroScoreInfo from '../pages/AgroScoreInfo';
 
 export default function AppRoutes() {
     return (
@@ -31,6 +32,7 @@ export default function AppRoutes() {
                                         <Route path="/safras/:id" element={<SafraDetails />} />
                                         <Route path="/meus-interesses" element={<MeusInteresses />} />
                                         <Route path="/perfil" element={<Perfil />} />
+                                        <Route path="/agroscore-info" element={<AgroScoreInfo />} />
                                     </Routes>
                                 </MainLayout>
                             </ProtectedRoute>

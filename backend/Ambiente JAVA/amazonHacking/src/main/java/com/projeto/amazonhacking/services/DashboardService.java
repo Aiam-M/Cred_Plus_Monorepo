@@ -23,7 +23,8 @@ public class DashboardService {
      * @return DTO com safras ativas, score médio, área total e distribuição por faixa
      */
     public GetDashboardDTO obterResumo() {
-        long safrasAtivas = safraRepository.count();
+        // "Ativas" = todas as safras menos as reprovadas (estas saem do catálogo).
+        long safrasAtivas = safraRepository.countByStatusNot("REPROVADA");
 
         Double media = safraRepository.mediaAgroScore();
         int agroScoreMedio = media == null ? 0 : (int) Math.round(media);

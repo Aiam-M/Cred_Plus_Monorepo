@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.projeto.amazonhacking.infra.exception.ValidacaoException;
 import com.projeto.amazonhacking.infra.security.TokenService;
 import com.projeto.amazonhacking.models.AuthenticationDTO;
 import com.projeto.amazonhacking.models.LoginResponseDTO;
 import com.projeto.amazonhacking.models.RegisterDTO;
 import com.projeto.amazonhacking.models.Usuario;
+import com.projeto.amazonhacking.models.UsuarioRole;
+import com.projeto.amazonhacking.repository.AssociacaoRepository;
 import com.projeto.amazonhacking.repository.UsuarioRepository;
 
 import jakarta.validation.Valid;
@@ -27,6 +30,9 @@ public class AuthenticationController {
 
     @Autowired
     private UsuarioRepository repository;
+
+    @Autowired
+    private AssociacaoRepository associacaoRepository;
 
     @Autowired
     private TokenService tokenService;
@@ -44,8 +50,16 @@ public class AuthenticationController {
     public ResponseEntity register(@RequestBody @Valid RegisterDTO data){
         if(this.repository.findByEmail(data.email()) != null) return ResponseEntity.badRequest().build();
 
+        // Valida a associação antes de salvar: sem isso, um id inexistente só
+        // estouraria como violação de FK (500). Aqui vira um 400 com mensagem clara.
+        if(!this.associacaoRepository.existsById(data.associacaoId())) {
+            throw new ValidacaoException("Associação não encontrada");
+        }
+
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.passwordHash());
-        Usuario newUsuario = new Usuario(data.nome(), data.email(), encryptedPassword, data.associacaoId(), data.role());
+        // O papel é SEMPRE USER. Nunca confiar em role vindo do cliente (evita
+        // que alguém se cadastre como ADMIN por este endpoint público).
+        Usuario newUsuario = new Usuario(data.nome(), data.email(), encryptedPassword, data.associacaoId(), UsuarioRole.USER);
 
         // Salva os campos adicionais de cadastro (opcionais — podem ser null).
         newUsuario.setCpf(data.cpf());

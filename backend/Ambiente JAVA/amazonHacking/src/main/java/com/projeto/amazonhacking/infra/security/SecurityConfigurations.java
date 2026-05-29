@@ -43,6 +43,9 @@ public class SecurityConfigurations {
             .authorizeHttpRequests(authorize -> authorize
                 // Preflight do CORS sempre liberado.
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Health check do serviço GEE: chamado por orquestrador (Render/Railway)
+                // sem credencial. Não expõe dados sensíveis.
+                .requestMatchers(HttpMethod.GET, "/gee/health").permitAll()
                 // Autenticação de produtores (já existente).
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()

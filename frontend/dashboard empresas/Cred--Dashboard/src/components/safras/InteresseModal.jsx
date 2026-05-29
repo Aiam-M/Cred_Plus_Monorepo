@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertTriangle, Info } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -73,12 +73,13 @@ export default function InteresseModal({ safra, onClose, onConfirm }) {
 
           {erro && (
             <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">
-              ⚠️ {erro}
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              {erro}
             </div>
           )}
 
           <div className="flex items-start gap-2 p-3 bg-cred-blue-info/10 rounded-lg">
-            <span className="text-cred-blue-info text-base leading-none mt-0.5">ℹ️</span>
+            <Info className="w-4 h-4 text-cred-blue-info flex-shrink-0 mt-0.5" />
             <p className="text-xs text-gray-600 leading-relaxed">
               O produtor será notificado e a <strong>Amazon People</strong> entrará em contato para intermediar a negociação.
             </p>

@@ -34,6 +34,8 @@ export interface SafraImagem {
   id: string;
   uri: string;
   ordem: number;
+  // true depois que a imagem foi enviada ao backend. Evita reenviar a mesma foto.
+  enviada?: boolean;
 }
 
 export interface Safra {
@@ -46,6 +48,9 @@ export interface Safra {
   imagens: SafraImagem[];
   createdAt: string;
   syncedAt: string | null;
+  // id numérico da safra no backend, preenchido após a sincronização.
+  // É o id usado para enviar as fotos (POST /produtor/safras/{servidorId}/imagens).
+  servidorId?: number | null;
 }
 
 export const INITIAL_SAFRAS: Safra[] = [

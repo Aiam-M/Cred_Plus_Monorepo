@@ -1,11 +1,12 @@
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { Home, PlusCircle, List, User } from 'lucide-react';
+import { Home, PlusCircle, List, User, Mail } from 'lucide-react';
 import { useSync } from '@/hooks/useSync';
 
 const navItems = [
   { icon: Home, label: 'Início', path: '/dashboard' },
-  { icon: PlusCircle, label: 'Nova Safra', path: '/safra/nova' },
   { icon: List, label: 'Safras', path: '/safras' },
+  { icon: PlusCircle, label: 'Nova Safra', path: '/safra/nova' },
+  { icon: Mail, label: 'Mensagens', path: '/interesses' },
   { icon: User, label: 'Perfil', path: '/perfil' },
 ] as const;
 

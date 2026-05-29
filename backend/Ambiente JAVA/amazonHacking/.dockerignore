@@ -1,0 +1,13 @@
+# Build artifacts (gerados de novo dentro do Docker)
+target/
+
+# Configs locais de IDE
+.idea/
+*.iml
+
+# Segredos locais - NUNCA devem entrar na imagem
+.env
+
+# Git
+.git/
+.gitignore

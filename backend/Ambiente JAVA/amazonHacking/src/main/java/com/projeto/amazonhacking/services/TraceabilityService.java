@@ -87,8 +87,12 @@ public class TraceabilityService {
     public TraceabilityEvent criarEvento(Safra safra, String tipo, Map<String, Object> dados,
                                          String responsavel, String responsavelTipo, String observacao,
                                          LocalDateTime data) {
-        List<TraceabilityEvent> existentes = eventRepository.findBySafra_IdOrderByCreatedAtAsc(safra.getId());
-        String hashAnterior = existentes.isEmpty() ? null : existentes.get(existentes.size() - 1).getHash();
+        // Busca só o último evento (em vez de carregar a cadeia inteira) para
+        // descobrir o hash anterior. Se duas requisições tentarem encadear no mesmo
+        // ponto ao mesmo tempo, as constraints UNIQUE da tabela barram a segunda.
+        String hashAnterior = eventRepository.findTopBySafra_IdOrderByCreatedAtDesc(safra.getId())
+                .map(TraceabilityEvent::getHash)
+                .orElse(null);
 
         String dadosJson = escreverDados(dados);
         String hash = calcularHash(safra.getId(), tipo, dadosJson, hashAnterior, data);

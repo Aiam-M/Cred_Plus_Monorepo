@@ -21,6 +21,11 @@ import com.projeto.amazonhacking.repository.SafraRepository;
 @Service
 public class SafraService {
 
+    // Teto de segurança: nº máximo de safras devolvidas no catálogo de uma vez.
+    // Evita montar uma resposta gigante se o volume crescer muito. Para escala
+    // real, o próximo passo é paginação de verdade (Pageable) — anotado como melhoria.
+    private static final int MAX_RESULTADOS = 500;
+
     private final SafraRepository safraRepository;
 
     public SafraService(SafraRepository safraRepository) {
@@ -40,6 +45,7 @@ public class SafraService {
                 .filter(safra -> passaFiltroScore(safra, scoreMin))
                 .filter(safra -> passaFiltroStatus(safra, status))
                 .filter(safra -> passaFiltroTipo(safra, tipos))
+                .limit(MAX_RESULTADOS)
                 .map(this::toDTO)
                 .toList();
     }

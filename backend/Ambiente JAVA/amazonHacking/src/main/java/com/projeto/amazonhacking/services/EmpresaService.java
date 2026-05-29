@@ -35,6 +35,9 @@ public class EmpresaService {
      */
     public GetEmpresaDTO cadastrar(EmpresaCadastroDTO dto) {
         // Validações primeiro: garante unicidade antes de gravar.
+        if (!cnpjValido(dto.cnpj())) {
+            throw new ValidacaoException("CNPJ inválido");
+        }
         if (empresaRepository.existsByEmail(dto.email())) {
             throw new ValidacaoException("Email já cadastrado");
         }
@@ -91,6 +94,43 @@ public class EmpresaService {
         }
 
         empresa.setPasswordHash(passwordEncoder.encode(dto.novaSenha()));
+        // Invalida os tokens emitidos antes desta troca de senha.
+        empresa.setTokenVersion(empresa.getTokenVersion() + 1);
         empresaRepository.save(empresa);
+    }
+
+    /**
+     * Valida o CNPJ pelos dígitos verificadores (módulo 11). O @Pattern do DTO só
+     * garante que são 14 números; aqui checamos se é um CNPJ realmente válido,
+     * recusando casos como "00000000000000".
+     * @param cnpj CNPJ com 14 dígitos (somente números)
+     * @return true se os dois dígitos verificadores conferirem
+     */
+    private boolean cnpjValido(String cnpj) {
+        if (cnpj == null || cnpj.length() != 14 || !cnpj.matches("\\d{14}")) {
+            return false;
+        }
+        // CNPJ com todos os dígitos iguais passa na conta, mas é inválido.
+        if (cnpj.chars().distinct().count() == 1) {
+            return false;
+        }
+
+        int[] pesos1 = {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        int[] pesos2 = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+
+        int dv1 = calcularDigito(cnpj.substring(0, 12), pesos1);
+        int dv2 = calcularDigito(cnpj.substring(0, 12) + dv1, pesos2);
+
+        return cnpj.charAt(12) - '0' == dv1 && cnpj.charAt(13) - '0' == dv2;
+    }
+
+    // Calcula um dígito verificador pelo módulo 11 a partir dos pesos informados.
+    private int calcularDigito(String base, int[] pesos) {
+        int soma = 0;
+        for (int i = 0; i < base.length(); i++) {
+            soma += (base.charAt(i) - '0') * pesos[i];
+        }
+        int resto = soma % 11;
+        return resto < 2 ? 0 : 11 - resto;
     }
 }

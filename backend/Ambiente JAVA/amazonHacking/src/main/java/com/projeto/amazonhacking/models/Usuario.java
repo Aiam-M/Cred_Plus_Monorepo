@@ -25,7 +25,7 @@ import jakarta.persistence.Table;
 
 @Entity(name = "users")
 @Table(name = "users")
-public class Usuario implements UserDetails{
+public class Usuario implements UserDetails, ContaAutenticavel{
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -62,6 +62,10 @@ public class Usuario implements UserDetails{
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // Versão do token. Muda na troca de senha para invalidar os tokens antigos.
+    @Column(name = "token_version")
+    private int tokenVersion;
 
     public Usuario(String nome, String email, String passwordHash, int associacaoId, UsuarioRole role){
         this.nome = nome;
@@ -118,7 +122,7 @@ public class Usuario implements UserDetails{
         return passwordHash;
     }
 
-    public void setPasswordBash(String passwordHash) {
+    public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
 
@@ -136,6 +140,15 @@ public class Usuario implements UserDetails{
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @Override
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 
     public String getCpf() {

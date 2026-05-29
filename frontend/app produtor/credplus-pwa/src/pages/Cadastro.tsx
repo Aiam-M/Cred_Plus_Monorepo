@@ -66,8 +66,8 @@ export default function Cadastro() {
       return;
     }
 
-    if (senha.length < 6) {
-      setErro('A senha precisa ter pelo menos 6 caracteres.');
+    if (senha.length < 8) {
+      setErro('A senha precisa ter pelo menos 8 caracteres.');
       return;
     }
 
@@ -87,9 +87,8 @@ export default function Cadastro() {
           email,
           passwordHash: senha,
           // Para a demo, todos os produtores são cadastrados na associação de Jutaiteua (id 1).
-          // O papel "USER" é o papel padrão de produtores no backend (UsuarioRole.USER).
+          // O papel NÃO é enviado pelo cliente: o backend sempre cadastra como USER.
           associacaoId: 1,
-          role: 'USER',
           cpf,
           dataNascimento,
           municipio,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Building2, Hash, Shield, Bell, Check, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Building2, Hash, Shield, Bell, Check, Eye, EyeOff, ClipboardList, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -12,10 +12,10 @@ const SEGMENTOS = [
   'Outros',
 ];
 
-function StatCard({ label, value, icon }) {
+function StatCard({ label, value, icon: Icon }) {
   return (
     <div className="bg-white rounded-xl border border-cred-gray-border p-4 text-center">
-      <span className="text-2xl">{icon}</span>
+      {Icon && <Icon className="w-6 h-6 mx-auto text-cred-green-dark" />}
       <p className="text-2xl font-bold text-cred-green-dark mt-1">{value}</p>
       <p className="text-xs text-gray-400 mt-0.5">{label}</p>
     </div>
@@ -90,8 +90,8 @@ export default function Perfil() {
   const handleSalvarSenha = async (e) => {
     e.preventDefault();
     setSenhaErro('');
-    if (senhaForm.nova.length < 6) {
-      setSenhaErro('A nova senha deve ter pelo menos 6 caracteres.');
+    if (senhaForm.nova.length < 8) {
+      setSenhaErro('A nova senha deve ter pelo menos 8 caracteres.');
       return;
     }
     if (senhaForm.nova !== senhaForm.confirmar) {
@@ -133,7 +133,8 @@ export default function Perfil() {
             <p className="text-sm text-gray-400 mt-0.5">{form.segmento}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cred-green-dark/10 text-cred-green-dark text-xs font-medium rounded-full">
-                ✅ Acesso Empresarial
+                <CheckCircle className="w-3 h-3" />
+                Acesso Empresarial
               </span>
               <span className="text-xs text-gray-400">· Membro desde {membroDesde}</span>
             </div>
@@ -145,7 +146,7 @@ export default function Perfil() {
           <StatCard
             label="Interesses enviados"
             value={totalInteresses ?? '…'}
-            icon="📋"
+            icon={ClipboardList}
           />
         </div>
       </div>
@@ -214,8 +215,9 @@ export default function Perfil() {
           </div>
 
           {erroSalvar && (
-            <p className="text-xs text-cred-red-error bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              ⚠️ {erroSalvar}
+            <p className="flex items-center gap-1.5 text-xs text-cred-red-error bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              {erroSalvar}
             </p>
           )}
 
@@ -233,7 +235,7 @@ export default function Perfil() {
               {salvo ? 'Salvo!' : 'Salvar Alterações'}
             </button>
             {salvo && (
-              <span className="text-sm text-cred-green-dark font-medium">✅ Dados atualizados com sucesso.</span>
+              <span className="text-sm text-cred-green-dark font-medium">Dados atualizados com sucesso.</span>
             )}
           </div>
         </form>
@@ -272,8 +274,9 @@ export default function Perfil() {
           ))}
 
           {senhaErro && (
-            <p className="text-xs text-cred-red-error bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              ⚠️ {senhaErro}
+            <p className="flex items-center gap-1.5 text-xs text-cred-red-error bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              {senhaErro}
             </p>
           )}
 
@@ -289,7 +292,7 @@ export default function Perfil() {
               Alterar Senha
             </button>
             {senhaSalva && (
-              <span className="text-sm text-cred-green-dark font-medium">✅ Senha alterada com sucesso.</span>
+              <span className="text-sm text-cred-green-dark font-medium">Senha alterada com sucesso.</span>
             )}
           </div>
         </form>

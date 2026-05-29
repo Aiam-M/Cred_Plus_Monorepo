@@ -36,6 +36,11 @@ public class Interesse {
     private String mensagem;
     private String status;
 
+    // Indica se o produtor já visualizou a mensagem no app dele.
+    // Começa como false e vira true quando o produtor abre a tela de interesses.
+    @Column(nullable = false)
+    private boolean lida;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -47,6 +52,7 @@ public class Interesse {
         this.empresa = empresa;
         this.mensagem = mensagem;
         this.status = status;
+        this.lida = false;
     }
 
     @PrePersist
@@ -92,6 +98,14 @@ public class Interesse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isLida() {
+        return lida;
+    }
+
+    public void setLida(boolean lida) {
+        this.lida = lida;
     }
 
     public LocalDateTime getCreatedAt() {

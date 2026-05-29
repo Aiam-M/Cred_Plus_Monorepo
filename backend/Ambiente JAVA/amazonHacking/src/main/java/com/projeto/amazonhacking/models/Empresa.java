@@ -24,7 +24,7 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "empresas")
-public class Empresa implements UserDetails {
+public class Empresa implements UserDetails, ContaAutenticavel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -43,6 +43,10 @@ public class Empresa implements UserDetails {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // Versão do token. Muda na troca de senha para invalidar os tokens antigos.
+    @Column(name = "token_version")
+    private int tokenVersion;
 
     public Empresa() {
     }
@@ -114,6 +118,15 @@ public class Empresa implements UserDetails {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @Override
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 
     @Override

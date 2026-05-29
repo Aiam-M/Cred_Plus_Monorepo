@@ -2,6 +2,8 @@ package com.projeto.amazonhacking.services;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.projeto.amazonhacking.dto.gee.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,12 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class GeeService {
+
+    private static final Logger log = LoggerFactory.getLogger(GeeService.class);
+
+    // Mensagem genérica devolvida ao chamador. Os detalhes (status, body, stack)
+    // ficam só no log do servidor — não vazam caminhos/versões do serviço externo.
+    private static final String ERRO_GENERICO = "Serviço de validação ambiental indisponível";
 
     @Value("${gee.python-url}")
     private String pythonServiceUrl;
@@ -46,6 +54,7 @@ public class GeeService {
     public GeeDataDTO buscarDadosCompletos() {
         String url = pythonServiceUrl + "/gee/jutaiteua/completo";
 
+        HttpResponse<String> response;
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -54,24 +63,23 @@ public class GeeService {
                     .timeout(Duration.ofSeconds(timeoutSeconds))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
-
-            if (response.statusCode() != 200) {
-                throw new RuntimeException(
-                        "Erro no serviço GEE - Status: " + response.statusCode()
-                                + " - Body: " + response.body()
-                );
-            }
-
-            return objectMapper.readValue(response.body(), GeeDataDTO.class);
-
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Erro ao buscar dados do GEE: " + e.getMessage(), e
-            );
+            log.error("Falha ao chamar o serviço GEE em {}", url, e);
+            throw new RuntimeException(ERRO_GENERICO);
+        }
+
+        if (response.statusCode() != 200) {
+            // Status e body só no log interno (podem revelar paths/versões do serviço).
+            log.error("Serviço GEE retornou status {} - body: {}", response.statusCode(), response.body());
+            throw new RuntimeException(ERRO_GENERICO);
+        }
+
+        try {
+            return objectMapper.readValue(response.body(), GeeDataDTO.class);
+        } catch (Exception e) {
+            log.error("Falha ao interpretar a resposta do serviço GEE", e);
+            throw new RuntimeException(ERRO_GENERICO);
         }
     }
 

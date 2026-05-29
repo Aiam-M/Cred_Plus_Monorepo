@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Leaf, MapPin, Star } from 'lucide-react';
+import { Leaf, MapPin, Star, BarChart3, Map, AlertTriangle } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -32,8 +32,9 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-        ⚠️ Erro ao carregar dashboard: {error}
+      <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+        Erro ao carregar dashboard: {error}
       </div>
     );
   }
@@ -90,8 +91,9 @@ export default function Dashboard() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bar Chart: Distribuição AgroScore */}
         <div className="bg-white rounded-2xl p-6 border border-cred-gray-border shadow-sm">
-          <h2 className="text-base font-semibold text-cred-gray-text mb-1">
-            📊 Distribuição de AgroScore
+          <h2 className="flex items-center gap-2 text-base font-semibold text-cred-gray-text mb-1">
+            <BarChart3 className="w-4 h-4 text-cred-green-dark" />
+            Distribuição de AgroScore
           </h2>
           <p className="text-xs text-gray-400 mb-5">Quantidade de safras por faixa de pontuação</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -124,12 +126,13 @@ export default function Dashboard() {
 
         {/* Mapa placeholder */}
         <div className="bg-white rounded-2xl p-6 border border-cred-gray-border shadow-sm">
-          <h2 className="text-base font-semibold text-cred-gray-text mb-1">
-            🗺️ Regiões com Safras Disponíveis
+          <h2 className="flex items-center gap-2 text-base font-semibold text-cred-gray-text mb-1">
+            <Map className="w-4 h-4 text-cred-green-dark" />
+            Regiões com Safras Disponíveis
           </h2>
           <p className="text-xs text-gray-400 mb-5">Distribuição geográfica das associações</p>
           <div className="h-[200px] bg-cred-gray-neutral rounded-xl flex flex-col items-center justify-center gap-3 border-2 border-dashed border-cred-gray-border">
-            <span className="text-4xl">🗺️</span>
+            <Map className="w-9 h-9 text-gray-400" />
             <p className="text-sm text-gray-400 font-medium">Mapa interativo em desenvolvimento</p>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-cred-gray-border">
               <span className="w-2 h-2 rounded-full bg-cred-green-medium" />

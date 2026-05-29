@@ -18,6 +18,12 @@ public interface SafraRepository extends JpaRepository<Safra, Integer> {
     Optional<Safra> findByLocalId(UUID localId);
 
     /**
+     * Lista as safras que ainda estão sem AgroScore. Usado pelo job de reconciliação
+     * para recalcular safras cujo cálculo falhou no cadastro (ex.: serviço Python fora do ar).
+     */
+    List<Safra> findByAgroScoreIsNull();
+
+    /**
      * Lista as safras de um produtor específico, já com associação e plantações
      * carregadas (evita N+1 e LazyInitializationException ao montar o DTO).
      */
@@ -73,4 +79,10 @@ public interface SafraRepository extends JpaRepository<Safra, Integer> {
      */
     @Query("SELECT COUNT(s) FROM Safra s WHERE s.agroScore >= :min AND s.agroScore <= :max")
     long contarPorFaixaScore(int min, int max);
+
+    /**
+     * Conta as safras com um status diferente do informado. Usado no dashboard
+     * para contar safras "ativas" (todas, exceto as REPROVADAS).
+     */
+    long countByStatusNot(String status);
 }

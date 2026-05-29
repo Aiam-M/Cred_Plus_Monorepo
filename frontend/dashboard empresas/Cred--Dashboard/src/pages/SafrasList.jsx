@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, CheckCircle, AlertTriangle } from 'lucide-react';
 import SafraCard from '../components/safras/SafraCard';
 import InteresseModal from '../components/safras/InteresseModal';
 import { api } from '../services/api';
@@ -155,7 +155,8 @@ export default function SafrasList() {
       {/* Toast de sucesso */}
       {sucessoId && (
         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">
-          ✅ Interesse na Safra #{sucessoId} registrado! A Amazon People entrará em contato.
+          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+          Interesse na Safra #{sucessoId} registrado! A Amazon People entrará em contato.
         </div>
       )}
 
@@ -192,8 +193,9 @@ export default function SafrasList() {
           {loading && <Spinner />}
 
           {!loading && error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-              ⚠️ Erro ao carregar safras: {error}
+            <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Erro ao carregar safras: {error}
             </div>
           )}
 

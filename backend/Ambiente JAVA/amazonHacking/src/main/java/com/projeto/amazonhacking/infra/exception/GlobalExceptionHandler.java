@@ -2,8 +2,11 @@ package com.projeto.amazonhacking.infra.exception;
 
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * Resposta padrão de erro enviada ao cliente.
@@ -77,10 +82,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Qualquer erro não previsto. Não expõe o detalhe interno ao cliente.
+     * Acesso negado: o usuário está autenticado, mas não tem permissão para o recurso.
+     * Sem este handler, a exceção cairia no genérico e viraria 500 (mascarando o 403).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErroResponseDTO> tratarAcessoNegado(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErroResponseDTO(HttpStatus.FORBIDDEN.value(), "Acesso negado"));
+    }
+
+    /**
+     * Qualquer erro não previsto. Não expõe o detalhe interno ao cliente, mas
+     * registra a stack trace no log do servidor para investigação (sem o log,
+     * NPEs/erros de SQL passariam despercebidos).
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResponseDTO> tratarErroInesperado(Exception ex) {
+        log.error("Erro não tratado na API", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErroResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                         "Ocorreu um erro inesperado. Tente novamente mais tarde."));

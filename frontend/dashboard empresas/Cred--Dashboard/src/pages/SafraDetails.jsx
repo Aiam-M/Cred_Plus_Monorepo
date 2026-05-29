@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Copy, CheckCheck, Database,
   FileText, Satellite, CheckCircle, Briefcase, XCircle, AlertTriangle,
+  ImageOff, Map, Link2,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
@@ -80,28 +81,73 @@ function HashLine({ label, value }) {
   );
 }
 
+// Galeria de fotos enviadas pelo produtor (GET /cred/safras/{id}/imagens).
+function Galeria({ imagens, loading, error }) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map((n) => (
+          <div key={n} className="aspect-video rounded-xl bg-cred-gray-neutral animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+        Erro ao carregar as fotos: {error}
+      </div>
+    );
+  }
+
+  if (!imagens || imagens.length === 0) {
+    return (
+      <div className="h-32 bg-cred-gray-neutral rounded-xl border-2 border-dashed border-cred-gray-border flex flex-col items-center justify-center gap-2 text-gray-400">
+        <ImageOff className="w-7 h-7" />
+        <p className="text-sm">Nenhuma foto enviada pelo produtor ainda.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {imagens.map((img) => (
+        <a
+          key={img.id}
+          href={img.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block aspect-video rounded-xl overflow-hidden border border-cred-gray-border bg-cred-gray-neutral hover:opacity-90 transition-opacity"
+        >
+          <img
+            src={img.url}
+            alt="Foto da safra enviada pelo produtor"
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
+        </a>
+      ))}
+    </div>
+  );
+}
+
 // ── Aba 1: Visão Geral ─────────────────────────────────────────────────────
-function AbaVisaoGeral({ safra, onDemonstrarInteresse }) {
+function AbaVisaoGeral({ safra, imagens, imagensLoading, imagensError, onDemonstrarInteresse }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">📸 Galeria</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((n) => (
-            <div
-              key={n}
-              className="aspect-video rounded-xl bg-gradient-to-br from-cred-green-dark to-cred-green-medium flex items-center justify-center"
-            >
-              <span className="text-3xl opacity-50">🌿</span>
-            </div>
-          ))}
-        </div>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          Galeria {imagens.length > 0 && `(${imagens.length})`}
+        </h3>
+        <Galeria imagens={imagens} loading={imagensLoading} error={imagensError} />
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">🌍 Localização</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Localização</h3>
         <div className="h-40 bg-cred-gray-neutral rounded-xl border-2 border-dashed border-cred-gray-border flex flex-col items-center justify-center gap-2">
-          <span className="text-3xl">🗺️</span>
+          <Map className="w-8 h-8 text-gray-400" />
           <p className="text-sm text-gray-400">Mapa em desenvolvimento</p>
           <p className="text-xs text-gray-400">
             {safra.associacao.municipio}-{safra.associacao.estado} · {safra.associacao.latitude?.toFixed(3)}, {safra.associacao.longitude?.toFixed(3)}
@@ -110,7 +156,7 @@ function AbaVisaoGeral({ safra, onDemonstrarInteresse }) {
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">📊 Plantações Cadastradas</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Plantações Cadastradas</h3>
         <div className="space-y-2">
           {safra.plantacoes.map((p, i) => (
             <div key={i} className="flex items-center justify-between px-4 py-3 bg-cred-beige rounded-xl">
@@ -122,7 +168,7 @@ function AbaVisaoGeral({ safra, onDemonstrarInteresse }) {
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">📍 Produtor</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Produtor</h3>
         <div className="bg-white border border-cred-gray-border rounded-xl p-4 space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Nome</span>
@@ -160,16 +206,17 @@ function AbaAgroScore({ detalhes, loading, error }) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-        ⚠️ Erro ao carregar AgroScore: {error}
+      <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+        Erro ao carregar AgroScore: {error}
       </div>
     );
   }
 
   if (!detalhes) {
     return (
-      <div className="text-center py-16 text-gray-400">
-        <p className="text-3xl mb-2">📡</p>
+      <div className="flex flex-col items-center text-center py-16 text-gray-400">
+        <Satellite className="w-8 h-8 mb-2" />
         <p className="font-medium">Análise de satélite ainda não disponível para esta safra.</p>
         <p className="text-xs mt-1">Os dados são processados automaticamente após o cadastro.</p>
       </div>
@@ -188,9 +235,9 @@ function AbaAgroScore({ detalhes, loading, error }) {
       <div className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-cred-gray-border">
         <AgroScoreDisplay score={detalhes.score} size="large" />
         <div className="flex-1">
-          <p className="text-lg font-bold text-cred-gray-text">🌟 AgroScore: {detalhes.score}/100</p>
+          <p className="text-lg font-bold text-cred-gray-text">AgroScore: {detalhes.score}/100</p>
           {detalhes.nota && (
-            <p className="text-xs text-gray-500 mt-1.5 leading-relaxed max-w-lg">ℹ️ {detalhes.nota}</p>
+            <p className="text-xs text-gray-500 mt-1.5 leading-relaxed max-w-lg">{detalhes.nota}</p>
           )}
           <p className="text-xs text-gray-400 mt-2">
             Atualizado em {formatDate(detalhes.dataAtualizacao)}
@@ -234,7 +281,7 @@ function AbaAgroScore({ detalhes, loading, error }) {
 
       {/* Gráfico NDVI */}
       <div className="bg-white rounded-2xl border border-cred-gray-border p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">📈 Série Temporal NDVI</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Série Temporal NDVI</h3>
         <p className="text-xs text-gray-400 mb-4">Linha tracejada vermelha = limiar mínimo (0,70)</p>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={detalhes.ndviSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -265,7 +312,7 @@ function AbaAgroScore({ detalhes, loading, error }) {
 
       {/* Gráfico MapBiomas */}
       <div className="bg-white rounded-2xl border border-cred-gray-border p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">📊 Distribuição Uso do Solo — MapBiomas</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Distribuição Uso do Solo — MapBiomas</h3>
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="shrink-0">
             <ResponsiveContainer width={200} height={200}>
@@ -320,6 +367,17 @@ function AbaAgroScore({ detalhes, loading, error }) {
           ))}
         </div>
       </div>
+
+      {/* Link para metodologia */}
+      <div className="flex justify-center pt-2">
+        <Link
+          to="/agroscore-info"
+          className="inline-flex items-center gap-2 px-6 py-2.5 border border-cred-green-dark text-cred-green-dark text-sm font-medium rounded-xl hover:bg-green-50 transition-colors"
+        >
+          <Satellite className="w-4 h-4" />
+          Saber mais sobre os nossos critérios
+        </Link>
+      </div>
     </div>
   );
 }
@@ -332,16 +390,17 @@ function AbaRastreabilidade({ rastr, loading, error }) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-        ⚠️ Erro ao carregar rastreabilidade: {error}
+      <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+        Erro ao carregar rastreabilidade: {error}
       </div>
     );
   }
 
   if (!rastr) {
     return (
-      <div className="text-center py-16 text-gray-400">
-        <p className="text-3xl mb-2">🔗</p>
+      <div className="flex flex-col items-center text-center py-16 text-gray-400">
+        <Link2 className="w-8 h-8 mb-2" />
         <p className="font-medium">Dados de rastreabilidade não disponíveis.</p>
       </div>
     );
@@ -353,13 +412,13 @@ function AbaRastreabilidade({ rastr, loading, error }) {
     <div className="space-y-6">
       {/* Status da cadeia */}
       <div className={`flex items-start gap-3 p-4 rounded-xl border ${cadeiaValida ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-        <span className="text-xl">{cadeiaValida ? '🔗' : '⚠️'}</span>
+        <span className="mt-0.5">{cadeiaValida ? <Link2 className="w-5 h-5 text-green-700" /> : <AlertTriangle className="w-5 h-5 text-red-700" />}</span>
         <div>
           <p className={`font-semibold text-sm ${cadeiaValida ? 'text-green-800' : 'text-red-800'}`}>
             Cadeia de Rastreabilidade — {eventos.length} evento{eventos.length !== 1 ? 's' : ''}
           </p>
           <p className={`text-xs mt-0.5 ${cadeiaValida ? 'text-green-700' : 'text-red-700'}`}>
-            {cadeiaValida ? '✅ Cadeia íntegra — hashes verificados' : '❌ Irregularidade detectada na cadeia'}
+            {cadeiaValida ? 'Cadeia íntegra — hashes verificados' : 'Irregularidade detectada na cadeia'}
             {' · '}
             Última verificação: {formatDate(ultimaVerificacao)}
           </p>
@@ -426,14 +485,14 @@ function AbaRastreabilidade({ rastr, loading, error }) {
         onClick={() => setVerificado(true)}
         className="px-6 py-2.5 bg-cred-green-dark text-white rounded-xl font-medium hover:bg-cred-green-medium transition-colors text-sm"
       >
-        🔍 Verificar Integridade da Cadeia
+        Verificar Integridade da Cadeia
       </button>
 
       {verificado && (
         <div className={`flex items-center gap-2 p-3 rounded-xl text-sm border ${cadeiaValida ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
           {cadeiaValida
-            ? '✅ Cadeia válida — todos os hashes foram verificados com sucesso.'
-            : '❌ Irregularidade detectada — um ou mais hashes não conferem.'}
+            ? <><CheckCircle className="w-4 h-4 flex-shrink-0" /> Cadeia válida — todos os hashes foram verificados com sucesso.</>
+            : <><XCircle className="w-4 h-4 flex-shrink-0" /> Irregularidade detectada — um ou mais hashes não conferem.</>}
         </div>
       )}
     </div>
@@ -459,6 +518,11 @@ export default function SafraDetails() {
   const [safraLoading, setSafraLoading] = useState(true);
   const [safraError, setSafraError] = useState(null);
 
+  // Fotos da safra (galeria da Visão Geral)
+  const [imagens, setImagens] = useState([]);
+  const [imagensLoading, setImagensLoading] = useState(true);
+  const [imagensError, setImagensError] = useState(null);
+
   // Estado da aba 2: AgroScore (carregado só quando a aba for aberta pela primeira vez)
   const [agroScore, setAgroScore] = useState(null);
   const [agroScoreLoading, setAgroScoreLoading] = useState(false);
@@ -477,6 +541,15 @@ export default function SafraDetails() {
       .then(setSafra)
       .catch((err) => setSafraError(err.message))
       .finally(() => setSafraLoading(false));
+  }, [id]);
+
+  // Busca as fotos da safra (galeria) ao montar o componente
+  useEffect(() => {
+    setImagensLoading(true);
+    api.get(`/cred/safras/${id}/imagens`)
+      .then((data) => setImagens(data ?? []))
+      .catch((err) => setImagensError(err.message))
+      .finally(() => setImagensLoading(false));
   }, [id]);
 
   // Busca AgroScore na primeira vez que a aba é aberta
@@ -518,8 +591,9 @@ export default function SafraDetails() {
         <button type="button" onClick={() => navigate('/safras')} className="flex items-center gap-2 text-sm text-cred-green-dark hover:underline">
           <ArrowLeft className="w-4 h-4" /> Voltar ao Catálogo
         </button>
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-          ⚠️ Erro ao carregar safra: {safraError}
+        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Erro ao carregar safra: {safraError}
         </div>
       </div>
     );
@@ -528,7 +602,6 @@ export default function SafraDetails() {
   if (!safra) {
     return (
       <div className="text-center py-20">
-        <p className="text-4xl mb-3">😔</p>
         <p className="text-gray-500 font-medium text-lg">Safra não encontrada.</p>
         <button type="button" onClick={() => navigate('/safras')} className="mt-4 text-sm text-cred-green-dark hover:underline">
           Voltar ao catálogo
@@ -552,12 +625,13 @@ export default function SafraDetails() {
             </h1>
             <div className="flex items-center gap-3 flex-wrap">
               <AgroScoreDisplay score={safra.agroScore} size="small" showLabel={false} />
-              <span className="text-sm font-medium text-cred-green-dark">⭐ AgroScore: {safra.agroScore}/100</span>
+              <span className="text-sm font-medium text-cred-green-dark">AgroScore: {safra.agroScore}/100</span>
               <StatusBadge status={safra.status} />
             </div>
             {safra.validadaEm && (
-              <p className="text-xs text-gray-400">
-                ✅ Validada em {new Date(safra.validadaEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+              <p className="flex items-center gap-1.5 text-xs text-gray-400">
+                <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                Validada em {new Date(safra.validadaEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
               </p>
             )}
           </div>
@@ -573,7 +647,8 @@ export default function SafraDetails() {
 
       {interesseConfirmado && (
         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">
-          ✅ Interesse registrado! A Amazon People entrará em contato.
+          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+          Interesse registrado! A Amazon People entrará em contato.
         </div>
       )}
 
@@ -597,7 +672,13 @@ export default function SafraDetails() {
         </div>
         <div className="p-6">
           {abaAtiva === 'visao-geral' && (
-            <AbaVisaoGeral safra={safra} onDemonstrarInteresse={() => setModalAberto(true)} />
+            <AbaVisaoGeral
+              safra={safra}
+              imagens={imagens}
+              imagensLoading={imagensLoading}
+              imagensError={imagensError}
+              onDemonstrarInteresse={() => setModalAberto(true)}
+            />
           )}
           {abaAtiva === 'agroscore' && (
             <AbaAgroScore detalhes={agroScore} loading={agroScoreLoading} error={agroScoreError} />

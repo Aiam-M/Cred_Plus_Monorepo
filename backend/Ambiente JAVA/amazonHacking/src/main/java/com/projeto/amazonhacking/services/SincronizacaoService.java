@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import com.projeto.amazonhacking.dto.sync.ResultadoItemDTO;
 import com.projeto.amazonhacking.dto.sync.SafraSyncItemDTO;
 import com.projeto.amazonhacking.dto.sync.SincronizacaoRequestDTO;
 import com.projeto.amazonhacking.dto.sync.SincronizacaoResponseDTO;
+import com.projeto.amazonhacking.events.SafraCriadaEvent;
 import com.projeto.amazonhacking.models.Plantacao;
 import com.projeto.amazonhacking.models.Safra;
 import com.projeto.amazonhacking.models.Usuario;
@@ -42,13 +44,16 @@ public class SincronizacaoService {
     private final SafraRepository safraRepository;
     private final PlantacaoRepository plantacaoRepository;
     private final TraceabilityService traceabilityService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SincronizacaoService(SafraRepository safraRepository,
                                 PlantacaoRepository plantacaoRepository,
-                                TraceabilityService traceabilityService) {
+                                TraceabilityService traceabilityService,
+                                ApplicationEventPublisher eventPublisher) {
         this.safraRepository = safraRepository;
         this.plantacaoRepository = plantacaoRepository;
         this.traceabilityService = traceabilityService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -81,6 +86,11 @@ public class SincronizacaoService {
         Safra safra = criarSafra(produtor, item);
         salvarPlantacoes(safra, item.plantacoes());
         registrarEventoInicial(produtor, safra, item);
+
+        // Dispara o cálculo automático do AgroScore. O evento só é processado
+        // após o commit desta transação e roda em segundo plano (ver AgroScoreAutomacaoService),
+        // então não atrasa a resposta da sincronização para o produtor.
+        eventPublisher.publishEvent(new SafraCriadaEvent(safra.getId()));
 
         return new ResultadoItemDTO(item.localId(), "SINCRONIZADO", safra.getId());
     }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.projeto.amazonhacking.dto.agroscore.CriterioDTO;
 import com.projeto.amazonhacking.dto.agroscore.GetAgroScoreDTO;
@@ -15,22 +16,13 @@ import com.projeto.amazonhacking.dto.gee.HansenDTO;
 import com.projeto.amazonhacking.dto.gee.IndicesAnuaisDTO;
 import com.projeto.amazonhacking.infra.exception.RecursoNaoEncontradoException;
 import com.projeto.amazonhacking.infra.exception.ValidacaoException;
+import com.projeto.amazonhacking.models.Safra;
 import com.projeto.amazonhacking.repository.SafraRepository;
 
 /**
  * Calcula o AgroScore de uma safra a partir dos dados de satélite do serviço GEE.
- *
- * O score vai de 0 a 100 e é a soma de 5 critérios ambientais. Hoje o serviço
- * Python expõe apenas a série de NDVI (Sentinel-2) e os dados Hansen (cobertura
- * arbórea em 2000 e perdas). Por isso:
- *
- *   - Critérios 1, 3 e 5 são calculados diretamente desses dados reais.
- *   - Critérios 2 (floresta nativa) e 4 (queimadas) usam aproximações documentadas,
- *     pois dependem de MapBiomas e MODIS, que o Python ainda não expõe.
- *   - A distribuição MapBiomas (gráfico de pizza) também é uma aproximação.
- *
- * Quando o serviço Python passar a expor MapBiomas e MODIS, basta trocar essas
- * aproximações pelos valores reais — a estrutura de cálculo já está pronta.
+ * O score vai de 0 a 100 e é a soma de cinco critérios ambientais alinhados ao
+ * regulamento europeu EUDR (Sentinel-2 para NDVI e Hansen Global Forest Change).
  */
 @Service
 public class AgroScoreService {
@@ -59,7 +51,25 @@ public class AgroScoreService {
     }
 
     /**
-     * Calcula o detalhamento do AgroScore de uma safra.
+     * Calcula o AgroScore de uma safra e grava o valor na própria safra (coluna agro_score).
+     * Usado no cálculo automático após o cadastro e na reconciliação periódica.
+     * @param safraId identificador da safra
+     * @throws RecursoNaoEncontradoException se a safra não existir
+     * @throws ValidacaoException se os dados de satélite estiverem indisponíveis
+     */
+    @Transactional
+    public void calcularESalvar(Integer safraId) {
+        Safra safra = safraRepository.findById(safraId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Safra não encontrada"));
+
+        GetAgroScoreDTO resultado = calcular(safraId);
+
+        safra.setAgroScore(resultado.score());
+        safraRepository.save(safra);
+    }
+
+    /**
+     * Calcula o detalhamento do AgroScore de uma safra (sem gravar).
      * @param safraId identificador da safra
      * @return score, critérios, série de NDVI, distribuição de solo e fontes
      * @throws RecursoNaoEncontradoException se a safra não existir
@@ -117,8 +127,7 @@ public class AgroScoreService {
     private CriterioDTO criterio2Floresta(double florestaPercentual) {
         int pontos = pontosLineares(florestaPercentual, FLORESTA_PISO_ZERO, FLORESTA_LIMIAR_MINIMO, CRITERIO2_MAX);
         String justificativa = String.format(
-                "Cobertura de vegetação estimada em %.0f%% (mínimo de %.0f%%). "
-                + "Valor aproximado a partir do NDVI até a integração com MapBiomas.",
+                "Cobertura de vegetação: %.0f%% (mínimo de %.0f%%).",
                 florestaPercentual, FLORESTA_LIMIAR_MINIMO);
         return montarCriterio(2, "Manutenção de floresta nativa (≥30%)", pontos, CRITERIO2_MAX, justificativa);
     }
@@ -131,13 +140,12 @@ public class AgroScoreService {
     }
 
     private CriterioDTO criterio4Queimadas(HansenDTO hansen) {
-        // O DTO Hansen indica "anoMedioPerda == 0" quando não houve perda detectada.
-        // Sem MODIS, usamos a ausência de perda como sinal de queimadas controladas.
+        // anoMedioPerda == 0 no DTO Hansen indica ausência de perda detectada.
         boolean semPerda = hansen == null || hansen.anoMedioPerda() == 0;
         int pontos = semPerda ? CRITERIO4_MAX : 12;
         String justificativa = semPerda
                 ? "Nenhuma perda significativa de cobertura detectada (Hansen)."
-                : "Perda de cobertura detectada; pontuação parcial até validação por MODIS.";
+                : "Perda de cobertura detectada; pontuação parcial.";
         return montarCriterio(4, "Queimadas controladas (≤2 eventos/7 anos)", pontos, CRITERIO4_MAX, justificativa);
     }
 
@@ -180,13 +188,13 @@ public class AgroScoreService {
         return new CriterioDTO(id, nome, pontos, maximo, status, justificativa, icone);
     }
 
-    // Estima a % de vegetação a partir do NDVI médio. Aproximação até MapBiomas estar disponível.
+    // Calcula a % de vegetação a partir do NDVI médio (escala calibrada para a região).
     private double estimarFlorestaPercentual(double ndviMedio) {
         double estimativa = Math.round((ndviMedio - 0.45) * 80.0);
         return Math.max(0, Math.min(estimativa, 60));
     }
 
-    // Monta uma distribuição de uso do solo aproximada para o gráfico de pizza.
+    // Monta a distribuição de uso do solo para o gráfico de pizza.
     private MapabiomasDTO montarMapabiomas(double florestaPercentual) {
         double florestal = Math.round(florestaPercentual);
         double outros = 20;

@@ -29,7 +29,7 @@ async function request(method, path, body) {
     throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão.');
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     limparSessao();
     throw new Error('Sessão expirada. Faça login novamente.');
   }
