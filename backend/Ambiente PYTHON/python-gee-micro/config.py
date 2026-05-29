@@ -6,7 +6,10 @@ load_dotenv()
 
 class Config:
     GEE_SERVICE_ACCOUNT_EMAIL = os.getenv('GEE_SERVICE_ACCOUNT_EMAIL')
+    # Em produção (Render) a chave vem como texto via GEE_KEY_DATA.
+    # Localmente, continuamos usando o arquivo via GEE_KEY_FILE.
     GEE_KEY_FILE              = os.getenv('GEE_KEY_FILE')
+    GEE_KEY_DATA              = os.getenv('GEE_KEY_DATA')
     GEE_PROJECT_ID            = os.getenv('GEE_PROJECT_ID')
     PORT                      = int(os.getenv('PORT', 5000))
     HOST                      = os.getenv('HOST', '0.0.0.0')
