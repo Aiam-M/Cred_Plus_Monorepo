@@ -24,6 +24,17 @@ export interface ResultadoSync {
   erro?: string;
 }
 
+// O backend exige que o localId seja um UUID (36 caracteres no formato padrão),
+// pois é a chave de idempotência da sincronização. Registros antigos/mock com
+// ids como "safra-003" não passam e, pior, derrubam o lote inteiro com erro 500.
+// Esta trava garante que só enviamos safras com id em formato UUID válido.
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function ehUuid(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
 /**
  * Monta o corpo que o backend espera para cada safra.
  * O `localId` é o id do celular — chave de idempotência: se o servidor já
@@ -71,6 +82,18 @@ export async function sincronizar(): Promise<ResultadoSync> {
 async function sincronizarReal(pendentes: Safra[]): Promise<ResultadoSync> {
   const token = localStorage.getItem('cred_token');
 
+  // Envia apenas safras com id em formato UUID. Assim um registro legado/mock
+  // (ex.: "safra-003") não quebra a sincronização das safras válidas do lote.
+  const validas = pendentes.filter((s) => ehUuid(s.id));
+  if (validas.length < pendentes.length) {
+    console.warn(
+      `Sincronização: ${pendentes.length - validas.length} safra(s) ignorada(s) por id fora do formato UUID.`,
+    );
+  }
+  if (validas.length === 0) {
+    return { enviadas: 0 };
+  }
+
   let response: Response;
   try {
     response = await fetch(`${BASE_URL}/cred/sync`, {
@@ -79,7 +102,7 @@ async function sincronizarReal(pendentes: Safra[]): Promise<ResultadoSync> {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ safras: pendentes.map(toSyncPayload) }),
+      body: JSON.stringify({ safras: validas.map(toSyncPayload) }),
     });
   } catch {
     return { enviadas: 0, erro: 'Sem conexão com o servidor.' };
@@ -100,7 +123,7 @@ async function sincronizarReal(pendentes: Safra[]): Promise<ResultadoSync> {
   let enviadas = 0;
 
   // Mapa para reencontrar a safra local (com as fotos em base64) pelo localId.
-  const porLocalId = new Map(pendentes.map((s) => [s.id, s]));
+  const porLocalId = new Map(validas.map((s) => [s.id, s]));
 
   for (const resultado of data.resultados ?? []) {
     if (resultado.status === 'SINCRONIZADO' || resultado.status === 'JA_SINCRONIZADO') {
