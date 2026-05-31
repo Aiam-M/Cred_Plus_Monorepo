@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Copy, CheckCheck, Database,
   FileText, Satellite, CheckCircle, Briefcase, XCircle, AlertTriangle,
-  ImageOff, Map, Link2,
+  ImageOff, Link2,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
@@ -142,17 +142,6 @@ function AbaVisaoGeral({ safra, imagens, imagensLoading, imagensError, onDemonst
           Galeria {imagens.length > 0 && `(${imagens.length})`}
         </h3>
         <Galeria imagens={imagens} loading={imagensLoading} error={imagensError} />
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Localização</h3>
-        <div className="h-40 bg-cred-gray-neutral rounded-xl border-2 border-dashed border-cred-gray-border flex flex-col items-center justify-center gap-2">
-          <Map className="w-8 h-8 text-gray-400" />
-          <p className="text-sm text-gray-400">Mapa em desenvolvimento</p>
-          <p className="text-xs text-gray-400">
-            {safra.associacao.municipio}-{safra.associacao.estado} · {safra.associacao.latitude?.toFixed(3)}, {safra.associacao.longitude?.toFixed(3)}
-          </p>
-        </div>
       </div>
 
       <div>
