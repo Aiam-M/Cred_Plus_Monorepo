@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { PlusCircle, RefreshCw, ArrowRight, Mail, ChevronRight } from 'lucide-react';
+import { PlusCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import type { Safra } from '@/data/mockData';
 import { safraRepo } from '@/db/db';
 import { sincronizar } from '@/services/syncService';
-import { fetchContagemNaoLidos } from '@/services/interesseService';
 import { useSafrasChanged } from '@/hooks/useSync';
 import SafraCard from '@/components/safras/SafraCard';
 import OnlineIndicator from '@/components/common/OnlineIndicator';
@@ -35,7 +34,6 @@ export default function Dashboard() {
   const usuario = carregarUsuario();
   const [safras, setSafras] = useState<Safra[]>([]);
   const [syncing, setSyncing] = useState(false);
-  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
 
   const carregarSafras = useCallback(() => {
     return safraRepo.getByProdutor(usuario.id).then(setSafras);
@@ -44,13 +42,6 @@ export default function Dashboard() {
   useEffect(() => {
     carregarSafras();
   }, [carregarSafras]);
-
-  // Busca a contagem de mensagens não lidas quando o Dashboard abre.
-  // É melhor-esforço: se falhar, fica em 0 (não atrapalha o resto da tela).
-  useEffect(() => {
-    if (!navigator.onLine) return;
-    fetchContagemNaoLidos().then(setMensagensNaoLidas);
-  }, []);
 
   // Recarrega a lista quando uma sincronização (em segundo plano) altera as safras.
   useSafrasChanged(carregarSafras);
@@ -120,32 +111,6 @@ export default function Dashboard() {
             {syncing ? 'Sincronizando...' : 'Sincronizar'}
           </button>
         </div>
-      )}
-
-      {/* Banner de mensagens não lidas */}
-      {mensagensNaoLidas > 0 && (
-        <button
-          onClick={() => navigate('/interesses')}
-          className="mx-4 mb-4 w-[calc(100%-2rem)] bg-green-50 border border-[#2D5016]/20 rounded-2xl p-4 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
-        >
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl bg-[#2D5016] flex items-center justify-center shrink-0">
-              <Mail size={18} className="text-white" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-green-50">
-                {mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}
-              </span>
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-semibold text-[#2D5016]">
-                {mensagensNaoLidas} {mensagensNaoLidas === 1 ? 'nova mensagem' : 'novas mensagens'}
-              </p>
-              <p className="text-xs text-[#4A7C2F]">
-                {mensagensNaoLidas === 1 ? 'Empresa interessada' : 'Empresas interessadas'} nas suas safras
-              </p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-[#2D5016] shrink-0" />
-        </button>
       )}
 
       {/* Botão Nova Safra */}

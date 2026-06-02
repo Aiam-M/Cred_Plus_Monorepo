@@ -110,7 +110,7 @@ export default function Perfil() {
           <ToggleRow
             icon={<Bell size={18} className="text-[#2D5016]" />}
             label="Notificações"
-            description="Avisos de validação e interesse"
+            description="Avisos de validação das suas safras"
             checked={notifEnabled}
             onChange={setNotifEnabled}
           />

@@ -10,7 +10,6 @@ import NovaSafra from '@/pages/NovaSafra';
 import SafrasList from '@/pages/SafrasList';
 import SafraDetails from '@/pages/SafraDetails';
 import Perfil from '@/pages/Perfil';
-import Interesses from '@/pages/Interesses';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -56,7 +55,6 @@ export default function App() {
             <Route path="safra/nova" element={<NovaSafra />} />
             <Route path="safras" element={<SafrasList />} />
             <Route path="safra/:id" element={<SafraDetails />} />
-            <Route path="interesses" element={<Interesses />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>
 
